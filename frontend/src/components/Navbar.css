@@ -1,0 +1,103 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #1E3A5F;
+  padding: 12px 24px;
+  color: white;
+  position: relative;
+  flex-wrap: wrap;
+}
+
+.navbar-brand {
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.navbar-desktop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navbar-welcome {
+  font-size: 14px;
+  color: #CBD5E0;
+}
+
+.navbar-role {
+  color: white;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.navbar-logout {
+  background-color: #E53E3E;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.navbar-hamburger {
+  display: none;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  font-size: 20px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.navbar-mobile-menu {
+  width: 100%;
+  background-color: #162d4a;
+  padding: 16px;
+  margin-top: 8px;
+  border-radius: 8px;
+}
+
+.navbar-mobile-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.navbar-mobile-name {
+  color: white;
+  font-weight: bold;
+}
+
+.navbar-mobile-logout {
+  width: 100%;
+  background-color: #E53E3E;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .navbar-desktop {
+    display: none;
+  }
+  .navbar-hamburger {
+    display: block;
+  }
+}
+
+@media (min-width: 769px) {
+  .navbar-mobile-menu {
+    display: none !important;
+  }
+}
