@@ -8,7 +8,12 @@ const app = express();
 
 // Security middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? process.env.FRONTEND_URL
+    : 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 
 // Rate limiting - only in production
@@ -21,8 +26,9 @@ if (process.env.NODE_ENV === 'production') {
   app.use(limiter);
 }
 
-// Database connection
+// Database connection + auto migration
 require('./config/database');
+require('./config/migrate');
 
 // Routes
 app.use('/api/auth', require('./routes/auth.routes'));
