@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
 });
 
 API.interceptors.request.use((config) => {
@@ -32,6 +32,7 @@ export const questionAPI = {
   getExamQuestions: (exam_id) => API.get(`/questions/exam/${exam_id}`),
   delete: (id) => API.delete(`/questions/${id}`),
 };
+
 export const sessionAPI = {
   start: (exam_id) => API.post('/sessions/start', { exam_id }),
   submit: (session_id, responses) => API.post('/sessions/submit', { session_id, responses }),
@@ -60,3 +61,4 @@ export const subjectAPI = {
 };
 
 export default API;
+ 
