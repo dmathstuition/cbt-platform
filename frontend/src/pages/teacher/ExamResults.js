@@ -8,10 +8,9 @@ function ExamResults() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadResults();
-  }, []);
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadResults(); }, []);
+  
   const loadResults = async () => {
     try {
       const res = await API.get(`/exams/${id}/results`);

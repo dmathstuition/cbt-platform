@@ -6,9 +6,7 @@ function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const dropdownRef = useRef(null);
-  const navigate = useNavigate();
+const dropdownRef = useRef(null);
 
   useEffect(() => {
     loadNotifications();

@@ -16,10 +16,10 @@ function ActivityFeed({ isAdmin = false }) {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
-  const navigate = useNavigate();
-
+ 
   const PREVIEW_COUNT = 4;
 
+ // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadActivities(); }, []);
 
   const loadActivities = async () => {

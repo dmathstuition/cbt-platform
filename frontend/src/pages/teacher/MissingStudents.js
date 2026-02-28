@@ -11,7 +11,8 @@ function MissingStudents() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
-  useEffect(() => { loadData(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadResults(); }, []);
 
   const loadData = async () => {
     try {
