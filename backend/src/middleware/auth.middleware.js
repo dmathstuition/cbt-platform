@@ -3,26 +3,29 @@ require('dotenv').config();
 
 const protect = (req, res, next) => {
   try {
-    // Get token from request header
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ message: 'Not authorized, no token' });
     }
 
-    // Verify the token
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-
-    // Attach user info to request
+    console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+    console.log('JWT_ACCESS_SECRET exists:', !!process.env.JWT_ACCESS_SECRET);
+    console.log('Token first 20 chars:', token.substring(0, 20));
+    
+    const secret = process.env.JWT_SECRET || process.env.JWT_ACCESS_SECRET;
+    console.log('Using secret:', !!secret);
+    
+    const decoded = jwt.verify(token, secret);
     req.user = decoded;
     next();
 
   } catch (error) {
+    console.error('Token verify error:', error.message);
     res.status(401).json({ message: 'Not authorized, invalid token' });
   }
 };
 
-// Role-based access control
 const allowRoles = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
