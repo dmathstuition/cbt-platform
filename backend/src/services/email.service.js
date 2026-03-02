@@ -80,7 +80,7 @@ const sendResultEmail = async ({ to, studentName, examTitle, score, totalMarks, 
                 : "Don't be discouraged. Review the material and try again. You can do it!"}
             </p>
             <div style="text-align:center;">
-              <a href="http://localhost:3000/student/results" class="btn">View Full Results</a>
+              <a href="https://portal-edu123.netlify.app/student/results" class="btn">View Full Results</a>
             </div>
           </div>
           <div class="footer">
@@ -129,7 +129,7 @@ const sendApprovalEmail = async ({ to, studentName, action }) => {
                 </p>
               </div>
               <div style="text-align:center;margin-top:24px;">
-                <a href="http://localhost:3000/login" 
+                <a href="https://portal-edu123.netlify.app/login" 
                    style="display:inline-block;background:#1E3A5F;color:white;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
                   Login Now →
                 </a>
@@ -179,7 +179,7 @@ const sendExamReminderEmail = async ({ to, studentName, examTitle, startTime }) 
           <p>This is a reminder that your exam <strong>${examTitle}</strong> 
              is scheduled to start at <strong>${startTime}</strong>.</p>
           <p>Make sure you are ready and in a quiet environment.</p>
-          <a href="http://localhost:3000/student/dashboard"
+          <a href="https://portal-edu123.netlify.app/student/dashboard"
              style="display:inline-block;background:#1E3A5F;color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;margin-top:16px;">
             Go to Dashboard
           </a>
@@ -234,7 +234,7 @@ const sendCredentialsEmail = async ({ to, name, email, password, role, loginUrl 
               </p>
             </div>
             <div style="text-align:center;">
-              <a href="${loginUrl || 'http://localhost:3000/login'}"
+              <a href="${loginUrl || 'https://portal-edu123.netlify.app'}"
                  style="display:inline-block;background:#1E3A5F;color:white;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
                 Login Now →
               </a>
@@ -256,4 +256,4 @@ const sendCredentialsEmail = async ({ to, name, email, password, role, loginUrl 
   }
 };
 
-module.exports = { sendResultEmail, sendApprovalEmail, sendExamReminderEmail, sendCredentialsEmail };
+module.exports = { sendResultEmail, sendApprovalEmail, sendExamReminderEmail, sendCredentialsEmail};
