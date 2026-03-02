@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { logActivity } = require('./activity.controller');
 
 // GET DASHBOARD STATS
 const getStats = async (req, res) => {
@@ -119,23 +120,39 @@ const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Delete related records first to avoid foreign key errors
+    // Get user details BEFORE deleting
+    const userRes = await pool.query(
+      'SELECT first_name, last_name, role FROM users WHERE id=$1',
+      [id]
+    );
+    const deletedUser = userRes.rows[0];
+
+    // Delete related records first
+    await pool.query(
+      'DELETE FROM responses WHERE session_id IN (SELECT id FROM exam_sessions WHERE student_id=$1)',
+      [id]
+    );
     await pool.query('DELETE FROM exam_sessions WHERE student_id=$1', [id]);
-    await pool.query('DELETE FROM responses WHERE session_id IN (SELECT id FROM exam_sessions WHERE student_id=$1)', [id]);
     await pool.query('DELETE FROM parent_student WHERE student_id=$1 OR parent_id=$1', [id]);
     await pool.query('DELETE FROM teacher_assignments WHERE teacher_id=$1', [id]);
 
+    // Delete the user
     await pool.query(
       'DELETE FROM users WHERE id=$1 AND school_id=$2',
       [id, req.user.school_id]
     );
-    await logActivity({
-     user_id: req.user.id,
-    school_id: req.user.school_id,
-    action: 'user_deleted',
-    description: `Deleted user: ${deletedUser.first_name} ${deletedUser.last_name} (${deletedUser.role})`,
-    metadata: { deleted_user_id: id }
-    });
+
+    // Log the activity
+    if (deletedUser) {
+      await logActivity({
+        user_id: req.user.id,
+        school_id: req.user.school_id,
+        action: 'user_deleted',
+        description: `Deleted user: ${deletedUser.first_name} ${deletedUser.last_name} (${deletedUser.role})`,
+        metadata: { deleted_user_id: id }
+      });
+    }
+
     res.json({ message: 'User deleted successfully' });
 
   } catch (error) {
