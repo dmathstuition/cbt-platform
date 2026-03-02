@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Navbar from './components/Navbar';
-
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import StudentDashboard from './pages/student/Dashboard';
@@ -35,7 +34,8 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Navbar />
+        {!window.location.pathname.includes('/login') && 
+        !window.location.pathname.includes('/register') && <Navbar />}
         <Routes>
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />
