@@ -32,19 +32,30 @@ require('./config/database');
 require('./config/migrate');
 
 // Routes
-app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/exams', require('./routes/exam.routes'));
-app.use('/api/questions', require('./routes/question.routes'));
-app.use('/api/sessions', require('./routes/session.routes'));
-app.use('/api/admin', require('./routes/admin.routes'));
-app.use('/api/upload', require('./routes/upload.routes'));
-app.use('/api/leaderboard', require('./routes/leaderboard.routes'));
-app.use('/api/pdf', require('./routes/pdf.routes'));
-app.use('/api/parent', require('./routes/parent.routes'));
-app.use('/api/classes', require('./routes/class.routes'));
-app.use('/api/subjects', require('./routes/subject.routes'));
-app.use('/api/notifications', require('./routes/notification.routes'));
-app.use('/api/activity', require('./routes/activity.routes'));
+const routes = [
+  ['/api/auth', './routes/auth.routes'],
+  ['/api/exams', './routes/exam.routes'],
+  ['/api/questions', './routes/question.routes'],
+  ['/api/sessions', './routes/session.routes'],
+  ['/api/admin', './routes/admin.routes'],
+  ['/api/upload', './routes/upload.routes'],
+  ['/api/leaderboard', './routes/leaderboard.routes'],
+  ['/api/pdf', './routes/pdf.routes'],
+  ['/api/parent', './routes/parent.routes'],
+  ['/api/classes', './routes/class.routes'],
+  ['/api/subjects', './routes/subject.routes'],
+  ['/api/notifications', './routes/notification.routes'],
+  ['/api/activity', './routes/activity.routes'],
+];
+
+routes.forEach(([path, route]) => {
+  try {
+    app.use(path, require(route));
+    console.log(`✅ Loaded route: ${path}`);
+  } catch (err) {
+    console.error(`❌ Failed to load route ${path}:`, err.message);
+  }
+});
 // Test route
 app.get('/', (req, res) => {
   res.json({ message: 'CBT Platform API is running' });
