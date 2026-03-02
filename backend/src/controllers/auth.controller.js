@@ -60,6 +60,7 @@ const login = async (req, res) => {
     }
 
     const user = result.rows[0];
+    console.log('Login attempt:', email, 'Users found:', result.rows.length);
 
     // Check approval status
     if (user.approval_status === 'pending') {
@@ -73,14 +74,14 @@ const login = async (req, res) => {
       });
     }
 
-    const validPassword = await bcrypt.compare(password, user.password_hash);
+   const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const token = jwt.sign(
       { id: user.id, role: user.role, school_id: user.school_id },
-      process.env.JWT_ACCESS_SECRET,
+      process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
     
