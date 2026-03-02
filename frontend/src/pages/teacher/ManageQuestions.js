@@ -15,8 +15,8 @@ function ManageQuestions() {
   const [filterType, setFilterType] = useState('all');
 
  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadResults(); }, []);
-  
+ useEffect(() => { loadData(); }, []);
+
   const loadData = async () => {
     try {
       const [examRes, bankRes] = await Promise.all([
