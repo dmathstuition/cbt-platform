@@ -34,7 +34,7 @@ const getMyActivity = async (req, res) => {
 // GET SCHOOL ACTIVITY (Admin)
 const getSchoolActivity = async (req, res) => {
   try {
-    const limit = req.query.limit || 20;
+    const limit = req.query.limit || 50;
     const result = await pool.query(
       `SELECT a.*, u.first_name || ' ' || u.last_name AS user_name, u.role
        FROM activity_logs a
@@ -51,5 +51,37 @@ const getSchoolActivity = async (req, res) => {
   }
 };
 
-module.exports = { logActivity, getMyActivity, getSchoolActivity };
- 
+// CLEAR LOGS (Admin only)
+const clearLogs = async (req, res) => {
+  try {
+    const { scope } = req.body; // 'mine' or 'all'
+
+    if (scope === 'all') {
+      await pool.query(
+        'DELETE FROM activity_logs WHERE school_id = $1',
+        [req.user.school_id]
+      );
+    } else {
+      await pool.query(
+        'DELETE FROM activity_logs WHERE user_id = $1',
+        [req.user.id]
+      );
+    }
+
+    // Log the clear action itself
+    await logActivity({
+      user_id: req.user.id,
+      school_id: req.user.school_id,
+      action: 'logs_cleared',
+      description: `Admin cleared ${scope === 'all' ? 'all school' : 'personal'} activity logs`,
+      metadata: { scope }
+    });
+
+    res.json({ message: scope === 'all' ? 'All logs cleared' : 'Your logs cleared' });
+  } catch (error) {
+    console.error('Clear logs error:', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { logActivity, getMyActivity, getSchoolActivity, clearLogs };

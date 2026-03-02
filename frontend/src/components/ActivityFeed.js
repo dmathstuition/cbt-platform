@@ -1,28 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 
 const actionIcons = {
-  login: '🔐', exam_started: '▶️', exam_submitted: '✅',
-  exam_created: '📝', user_approved: '✅', user_rejected: '❌', default: '📌'
+  login: '🔐',
+  exam_started: '▶️',
+  exam_submitted: '✅',
+  exam_created: '📝',
+  user_approved: '✅',
+  user_rejected: '❌',
+  user_created: '➕',
+  user_deleted: '🗑️',
+  user_status_changed: '🔄',
+  settings_updated: '⚙️',
+  logs_cleared: '🧹',
+  default: '📌'
 };
 
 const actionColors = {
-  login: '#3182CE', exam_started: '#D69E2E', exam_submitted: '#38A169',
-  exam_created: '#805AD5', user_approved: '#38A169', user_rejected: '#E53E3E', default: '#718096'
+  login: '#3182CE',
+  exam_started: '#D69E2E',
+  exam_submitted: '#38A169',
+  exam_created: '#805AD5',
+  user_approved: '#38A169',
+  user_rejected: '#E53E3E',
+  user_created: '#38A169',
+  user_deleted: '#E53E3E',
+  user_status_changed: '#D69E2E',
+  settings_updated: '#718096',
+  logs_cleared: '#718096',
+  default: '#718096'
 };
 
 function ActivityFeed({ isAdmin = false }) {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
- 
+  const [clearing, setClearing] = useState(false);
+  const [showClearMenu, setShowClearMenu] = useState(false);
+
   const PREVIEW_COUNT = 4;
 
- // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadActivities(); }, []);
 
   const loadActivities = async () => {
+    setLoading(true);
     try {
       const endpoint = isAdmin ? '/activity/school' : '/activity/my';
       const res = await API.get(`${endpoint}?limit=50`);
@@ -31,6 +52,23 @@ function ActivityFeed({ isAdmin = false }) {
       console.error('Failed to load activities');
     }
     setLoading(false);
+  };
+
+  const handleClear = async (scope) => {
+    if (!window.confirm(
+      scope === 'all'
+        ? 'Clear ALL school activity logs? This cannot be undone!'
+        : 'Clear your personal activity logs?'
+    )) return;
+    setClearing(true);
+    setShowClearMenu(false);
+    try {
+      await API.delete('/activity/clear', { data: { scope } });
+      await loadActivities();
+    } catch (err) {
+      alert('Failed to clear logs');
+    }
+    setClearing(false);
   };
 
   const timeAgo = (date) => {
@@ -53,9 +91,34 @@ function ActivityFeed({ isAdmin = false }) {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h3 style={styles.title}>🕐 Recent Activity</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={styles.title}>🕐 Recent Activity</h3>
+          {isAdmin && <span style={styles.adminBadge}>All Users</span>}
+        </div>
+
+        {/* Clear Logs Button - Admin Only */}
         {isAdmin && (
-          <span style={styles.adminBadge}>All Users</span>
+          <div style={{ position: 'relative' }}>
+            <button
+              style={styles.clearBtn}
+              onClick={() => setShowClearMenu(!showClearMenu)}
+              disabled={clearing}
+            >
+              {clearing ? '⏳' : '🧹'} {clearing ? 'Clearing...' : 'Clear'}
+            </button>
+            {showClearMenu && (
+              <div style={styles.clearMenu}>
+                <button style={styles.clearMenuItem}
+                  onClick={() => handleClear('mine')}>
+                  🧹 Clear My Logs
+                </button>
+                <button style={{ ...styles.clearMenuItem, color: '#E53E3E' }}
+                  onClick={() => handleClear('all')}>
+                  🗑️ Clear All School Logs
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -103,15 +166,11 @@ function ActivityFeed({ isAdmin = false }) {
             ))}
           </div>
 
-          {/* See More / See Less */}
           {activities.length > PREVIEW_COUNT && (
-            <button
-              style={styles.seeMoreBtn}
-              onClick={() => setShowAll(!showAll)}
-            >
+            <button style={styles.seeMoreBtn} onClick={() => setShowAll(!showAll)}>
               {showAll
                 ? '▲ Show Less'
-                : `▼ See More (${activities.length - PREVIEW_COUNT} more activities)`}
+                : `▼ See More (${activities.length - PREVIEW_COUNT} more)`}
             </button>
           )}
         </>
@@ -125,6 +184,9 @@ const styles = {
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
   title: { color: '#1E3A5F', fontSize: '16px', fontWeight: '700', margin: 0 },
   adminBadge: { backgroundColor: '#EDF2F7', color: '#4A5568', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '700' },
+  clearBtn: { backgroundColor: '#FFF5F5', color: '#E53E3E', border: '1px solid #FED7D7', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' },
+  clearMenu: { position: 'absolute', right: 0, top: '36px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.15)', border: '1px solid #EEE', zIndex: 100, minWidth: '200px' },
+  clearMenuItem: { display: 'block', width: '100%', padding: '10px 16px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', fontSize: '13px', textAlign: 'left', fontWeight: '600' },
   loading: { textAlign: 'center', color: '#888', padding: '16px', fontSize: '14px' },
   empty: { textAlign: 'center', padding: '20px', color: '#888', fontSize: '14px' },
   feed: { display: 'flex', flexDirection: 'column' },
@@ -135,12 +197,7 @@ const styles = {
   rolePill: { padding: '1px 7px', borderRadius: '8px', fontSize: '10px', fontWeight: '700' },
   description: { color: '#555', fontSize: '13px', lineHeight: '1.4', marginBottom: '2px' },
   time: { color: '#AAA', fontSize: '11px' },
-  seeMoreBtn: {
-    width: '100%', marginTop: '12px', padding: '10px',
-    backgroundColor: '#F7FAFC', border: '1px solid #E2E8F0',
-    borderRadius: '8px', cursor: 'pointer', color: '#3182CE',
-    fontSize: '13px', fontWeight: '600', textAlign: 'center'
-  }
+  seeMoreBtn: { width: '100%', marginTop: '12px', padding: '10px', backgroundColor: '#F7FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', cursor: 'pointer', color: '#3182CE', fontSize: '13px', fontWeight: '600', textAlign: 'center' }
 };
 
 export default ActivityFeed;

@@ -96,6 +96,14 @@ const toggleUserStatus = async (req, res) => {
       [newStatus, id]
     );
 
+    await logActivity({
+  user_id: req.user.id,
+  school_id: req.user.school_id,
+  action: 'user_status_changed',
+  description: `${result.rows[0].is_active ? 'Activated' : 'Deactivated'} user: ${result.rows[0].first_name} ${result.rows[0].last_name}`,
+  metadata: { target_user_id: id, is_active: result.rows[0].is_active }
+});
+
     res.json({
       message: `User ${newStatus ? 'activated' : 'deactivated'} successfully`,
       is_active: newStatus
@@ -121,7 +129,13 @@ const deleteUser = async (req, res) => {
       'DELETE FROM users WHERE id=$1 AND school_id=$2',
       [id, req.user.school_id]
     );
-
+    await logActivity({
+     user_id: req.user.id,
+    school_id: req.user.school_id,
+    action: 'user_deleted',
+    description: `Deleted user: ${deletedUser.first_name} ${deletedUser.last_name} (${deletedUser.role})`,
+    metadata: { deleted_user_id: id }
+    });
     res.json({ message: 'User deleted successfully' });
 
   } catch (error) {
@@ -202,6 +216,15 @@ const createUser = async (req, res) => {
     console.error('Create user error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
+
+  await logActivity({
+  user_id: req.user.id,
+  school_id: req.user.school_id,
+  action: 'user_created',
+  description: `Created ${role} account for ${first_name} ${last_name}`,
+  metadata: { new_user_id: result.rows[0].id, role }
+});
+
 };
 
 // GET PENDING REGISTRATIONS
@@ -343,6 +366,14 @@ const updateSchoolSettings = async (req, res) => {
        website || null, motto || null, logo_url || null,
        req.user.school_id]
     );
+
+    await logActivity({
+  user_id: req.user.id,
+  school_id: req.user.school_id,
+  action: 'settings_updated',
+  description: `Updated school settings for ${name}`,
+  metadata: { name }
+});
 
     res.json({ message: 'Settings updated successfully', school: result.rows[0] });
   } catch (error) {
