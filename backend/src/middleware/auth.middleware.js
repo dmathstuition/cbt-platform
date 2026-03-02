@@ -8,11 +8,6 @@ const protect = (req, res, next) => {
       return res.status(401).json({ message: 'Not authorized, no token' });
     }
 
-    const token = authHeader.split(' ')[1];
-    console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
-    console.log('JWT_ACCESS_SECRET exists:', !!process.env.JWT_ACCESS_SECRET);
-    console.log('Token first 20 chars:', token.substring(0, 20));
-    
     const secret = process.env.JWT_SECRET || process.env.JWT_ACCESS_SECRET;
     console.log('Using secret:', !!secret);
     
