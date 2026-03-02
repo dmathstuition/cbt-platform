@@ -10,7 +10,7 @@ function Login() {
   const [form, setForm] = useState({
     email: '',
     password: '',
-    school_id: '7b1115c7-fd46-40dc-b81d-f47ef03861a7'
+    school_id: '65bd48c6-6ec1-4077-bf42-b6024f0147d7'
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
