@@ -1,0 +1,62 @@
+{
+  "backup_date": "2026-03-03T08:16:15.561Z",
+  "schools": [
+    {
+      "id": "65bd48c6-6ec1-4077-bf42-b6024f0147d7",
+      "name": "D-MATHS ACADEMY",
+      "address": "E-LEARNING",
+      "phone": "07025674894",
+      "email": "dmathstuition@gmail.com",
+      "website": "https://d-maths-portal.vercel.app/",
+      "motto": "LOGIC_CODE_FUTURE",
+      "logo_url": null,
+      "created_at": "2026-03-01T03:58:32.965Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "50472e6c-254b-48fb-94d0-993da13d90ce",
+      "school_id": "65bd48c6-6ec1-4077-bf42-b6024f0147d7",
+      "first_name": "Admin",
+      "last_name": "User",
+      "email": "admin@school.com",
+      "password": "$2b$10$t3MNcG86cqMA2vbeuMsyke0UPlBLu18LDbZ9O0vQ3NnuDMIfvdUL2",
+      "role": "school_admin",
+      "class_id": null,
+      "is_active": true,
+      "approval_status": "approved",
+      "created_at": "2026-03-01T03:58:33.281Z"
+    },
+    {
+      "id": "48baafb1-d17e-41c1-90f6-125b1e86d483",
+      "school_id": "65bd48c6-6ec1-4077-bf42-b6024f0147d7",
+      "first_name": "D",
+      "last_name": "Maths",
+      "email": "dmathstuition@gmail.com",
+      "password": "$2b$10$6gq6rdiI./0NnZB947jw6OcDe.djhVlI.WwFj7W2LTGF1BA4UoH6u",
+      "role": "teacher",
+      "class_id": null,
+      "is_active": true,
+      "approval_status": "approved",
+      "created_at": "2026-03-02T12:21:38.888Z"
+    }
+  ],
+  "classes": [
+    {
+      "id": "decc2385-25f9-4eb8-b746-7c418edefd86",
+      "school_id": "65bd48c6-6ec1-4077-bf42-b6024f0147d7",
+      "name": "YEAR 7",
+      "created_at": "2026-03-02T19:57:59.387Z",
+      "description": ""
+    }
+  ],
+  "subjects": [
+    {
+      "id": "48759746-c944-46f2-b707-fdf036dc3d75",
+      "school_id": "65bd48c6-6ec1-4077-bf42-b6024f0147d7",
+      "name": "Mathematics",
+      "created_at": "2026-03-02T19:57:19.674Z",
+      "description": ""
+    }
+  ]
+}
