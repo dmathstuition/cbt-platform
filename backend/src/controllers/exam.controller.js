@@ -304,7 +304,50 @@ const getMissingStudents = async (req, res) => {
   }
 };
 
+// EDIT EXAM
+const updateExam = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, type, subject_id, class_id, duration_minutes, pass_mark, start_at, end_at } = req.body;
+
+    if (!title || !duration_minutes) {
+      return res.status(400).json({ message: 'Title and duration are required' });
+    }
+
+    const result = await pool.query(
+      `UPDATE exams SET 
+        title=$1, type=$2, subject_id=$3, class_id=$4,
+        duration_minutes=$5, pass_mark=$6, start_at=$7, end_at=$8
+       WHERE id=$9 AND school_id=$10 AND created_by=$11
+       RETURNING *`,
+      [title, type, subject_id || null, class_id || null,
+       duration_minutes, pass_mark || 50,
+       start_at || null, end_at || null,
+       id, req.user.school_id, req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Exam not found or unauthorized' });
+    }
+
+    const { logActivity } = require('./activity.controller');
+    await logActivity({
+      user_id: req.user.id,
+      school_id: req.user.school_id,
+      action: 'exam_updated',
+      description: `Updated exam: ${title}`,
+      metadata: { exam_id: id, title }
+    });
+
+    res.json({ message: 'Exam updated successfully', exam: result.rows[0] });
+
+  } catch (error) {
+    console.error('Update exam error:', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   createExam, getExams, getExam, updateExamStatus,
-  deleteExam, getExamResults, getMissingStudents
+  deleteExam, getExamResults, getMissingStudents, updateExam
 };

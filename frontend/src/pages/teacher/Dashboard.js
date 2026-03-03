@@ -221,7 +221,10 @@ function TeacherDashboard() {
                   onClick={() => handlePrintQuestions(exam.id)}>
                   🖨️ Print
                 </button>
-
+                <button style={{...styles.actionBtn, backgroundColor: '#D69E2E'}}
+                  onClick={() => navigate(`/teacher/exam/${exam.id}/edit`)}>
+                  ✏️ Edit
+                </button>
                 <button style={{...styles.actionBtn, backgroundColor: '#805AD5'}}
                   onClick={() => navigate(`/teacher/exam/${exam.id}/results`)}>
                   📊 Results
