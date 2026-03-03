@@ -27,6 +27,7 @@ import SendNotification from './pages/admin/SendNotification';
 import BulkUpload from './pages/teacher/BulkUpload';
 import SchoolSettings from './pages/admin/SchoolSettings';
 import MissingStudents from './pages/teacher/MissingStudents';
+import EditExam from './pages/teacher/EditExam'; 
 import './App.css';
 
 
@@ -149,6 +150,12 @@ function App() {
             <PrivateRoute allowedRoles={['teacher', 'school_admin']}>
               <MissingStudents />
             </PrivateRoute>
+          } />
+
+          <Route path="/teacher/exam/:id/edit" element={
+         <PrivateRoute allowedRoles={['teacher', 'school_admin']}>
+        <EditExam />
+         </PrivateRoute>
           } />
 
           <Route path="/admin/school-settings" element={

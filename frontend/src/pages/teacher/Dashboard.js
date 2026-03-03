@@ -67,7 +67,7 @@ function TeacherDashboard() {
   const handlePrintQuestions = async (examId) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/pdf/exam-questions/${examId}`, {
+      const res = await fetch(`https://cbt-platform-m6kq.onrender.com/api/pdf/exam-questions/${examId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed');
