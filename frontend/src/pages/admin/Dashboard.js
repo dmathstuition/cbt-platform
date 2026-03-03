@@ -2,10 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../../services/api';
 import ActivityFeed from '../../components/ActivityFeed';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
+} from 'recharts';
 
 function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [pendingUsers, setPendingUsers] = useState([]);
+  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -13,12 +18,14 @@ function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      const [statsRes, pendingRes] = await Promise.all([
+      const [statsRes, pendingRes, resultsRes] = await Promise.all([
         API.get('/admin/stats'),
-        API.get('/admin/pending')
+        API.get('/admin/pending'),
+        API.get('/admin/results')
       ]);
       setStats(statsRes.data.stats);
       setPendingUsers(pendingRes.data.users);
+      setResults(resultsRes.data.results || []);
     } catch (err) {
       console.error('Failed to load stats');
     }
@@ -40,6 +47,30 @@ function AdminDashboard() {
     } catch (err) { alert('Failed to reject'); }
   };
 
+  // Prepare chart data
+  const passFailData = [
+    { name: 'Passed', value: results.filter(r => r.passed).length, color: '#38A169' },
+    { name: 'Failed', value: results.filter(r => !r.passed).length, color: '#E53E3E' }
+  ];
+
+  // Group results by exam for bar chart
+  const examScores = {};
+  results.forEach(r => {
+    if (!examScores[r.exam_title]) examScores[r.exam_title] = { title: r.exam_title, total: 0, passed: 0 };
+    examScores[r.exam_title].total++;
+    if (r.passed) examScores[r.exam_title].passed++;
+  });
+  const barData = Object.values(examScores).slice(0, 6).map(e => ({
+    name: e.title.length > 15 ? e.title.substring(0, 15) + '...' : e.title,
+    Passed: e.passed,
+    Failed: e.total - e.passed
+  }));
+
+  const userBreakdownData = [
+    { name: 'Students', value: stats?.students || 0, color: '#1E3A5F' },
+    { name: 'Teachers', value: stats?.teachers || 0, color: '#3182CE' },
+  ];
+
   if (loading) return <div style={styles.center}><p>Loading dashboard...</p></div>;
 
   return (
@@ -51,10 +82,7 @@ function AdminDashboard() {
           <h1 style={styles.title}>Admin Dashboard</h1>
           <p style={styles.subtitle}>School overview and management</p>
         </div>
-        <button
-          style={styles.notifyBtn}
-          onClick={() => navigate('/admin/notifications')}
-        >
+        <button style={styles.notifyBtn} onClick={() => navigate('/admin/notifications')}>
           📢 Send Notification
         </button>
       </div>
@@ -73,9 +101,7 @@ function AdminDashboard() {
                 <div style={styles.pendingInfo}>
                   <div style={styles.pendingName}>{u.first_name} {u.last_name}</div>
                   <div style={styles.pendingEmail}>{u.email}</div>
-                  <div style={styles.pendingDate}>
-                    Registered: {new Date(u.created_at).toLocaleDateString('en-GB')}
-                  </div>
+                  <div style={styles.pendingDate}>Registered: {new Date(u.created_at).toLocaleDateString('en-GB')}</div>
                 </div>
                 <div style={styles.pendingActions}>
                   <button style={styles.approveBtn} onClick={() => handleApprove(u.id)}>✅ Approve</button>
@@ -96,7 +122,6 @@ function AdminDashboard() {
           { icon: '📊', value: stats?.submissions || 0, label: 'Submissions', color: '#D69E2E' },
           { icon: '✅', value: `${stats?.pass_rate || 0}%`, label: 'Pass Rate', color: '#805AD5' },
           { icon: '⏳', value: pendingUsers.length, label: 'Pending', color: '#E53E3E' }
-          
         ].map((s, i) => (
           <div key={i} style={{ ...styles.statCard, borderTop: `4px solid ${s.color}` }}>
             <div style={styles.statIcon}>{s.icon}</div>
@@ -106,10 +131,77 @@ function AdminDashboard() {
         ))}
       </div>
 
-      {/* Two column layout — Quick Actions + Activity */}
-      <div style={styles.twoCol}>
+      {/* Charts Row */}
+      {results.length > 0 && (
+        <div style={styles.chartsRow}>
 
-        {/* Quick Actions */}
+          {/* Bar Chart - Exam Performance */}
+          <div style={styles.chartCard}>
+            <h3 style={styles.chartTitle}>📊 Exam Performance</h3>
+            <p style={styles.chartSubtitle}>Passed vs Failed per exam</p>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={barData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar dataKey="Passed" fill="#38A169" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Failed" fill="#E53E3E" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Pie Chart - Pass/Fail */}
+          <div style={styles.chartCard}>
+            <h3 style={styles.chartTitle}>🎯 Overall Pass Rate</h3>
+            <p style={styles.chartSubtitle}>{results.length} total submissions</p>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={passFailData}
+                  cx="50%" cy="50%"
+                  innerRadius={55} outerRadius={85}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {passFailData.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Pie Chart - Users */}
+          <div style={styles.chartCard}>
+            <h3 style={styles.chartTitle}>👥 User Breakdown</h3>
+            <p style={styles.chartSubtitle}>Students vs Teachers</p>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={userBreakdownData}
+                  cx="50%" cy="50%"
+                  innerRadius={55} outerRadius={85}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {userBreakdownData.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+        </div>
+      )}
+
+      {/* Two column layout */}
+      <div style={styles.twoCol}>
         <div style={styles.actionsPanel}>
           <h2 style={styles.sectionTitle}>⚡ Quick Actions</h2>
           <div style={styles.actionsGrid}>
@@ -136,12 +228,9 @@ function AdminDashboard() {
             ))}
           </div>
         </div>
-
-        {/* Activity Feed */}
         <div style={styles.activityPanel}>
           <ActivityFeed isAdmin={true} />
         </div>
-
       </div>
     </div>
   );
@@ -153,7 +242,7 @@ const styles = {
   pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' },
   title: { color: '#1E3A5F', fontSize: '24px', marginBottom: '4px' },
   subtitle: { color: '#666' },
-  notifyBtn: { backgroundColor: '#E53E3E', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '14px', whiteSpace: 'nowrap' },
+  notifyBtn: { backgroundColor: '#E53E3E', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '14px' },
   pendingBanner: { backgroundColor: '#FFFBEB', border: '1px solid #F6E05E', borderRadius: '12px', padding: '20px', marginBottom: '24px' },
   pendingHeader: { marginBottom: '16px' },
   pendingTitle: { color: '#744210', fontWeight: '700', fontSize: '16px', display: 'block' },
@@ -173,6 +262,10 @@ const styles = {
   statIcon: { fontSize: '24px', marginBottom: '6px' },
   statValue: { fontSize: '26px', fontWeight: 'bold', color: '#1E3A5F' },
   statLabel: { color: '#666', fontSize: '12px', marginTop: '4px' },
+  chartsRow: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' },
+  chartCard: { backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
+  chartTitle: { color: '#1E3A5F', fontSize: '15px', fontWeight: '700', marginBottom: '4px' },
+  chartSubtitle: { color: '#888', fontSize: '12px', marginBottom: '12px' },
   twoCol: { display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' },
   actionsPanel: { flex: 2, minWidth: '300px' },
   activityPanel: { flex: 1, minWidth: '280px' },
@@ -182,7 +275,6 @@ const styles = {
   actionIcon: { fontSize: '26px', flexShrink: 0 },
   actionTitle: { fontWeight: '700', color: '#1E3A5F', marginBottom: '3px', fontSize: '14px' },
   actionDesc: { color: '#666', fontSize: '12px' }
-  
 };
 
 export default AdminDashboard;
