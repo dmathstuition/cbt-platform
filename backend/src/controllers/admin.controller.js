@@ -273,8 +273,117 @@ const updateSchoolSettings = async (req, res) => {
   }
 };
 
+// EXPORT RESULTS TO EXCEL
+const exportResults = async (req, res) => {
+  try {
+    const { exam_id, format = 'excel' } = req.query;
+
+    let query = `
+      SELECT 
+        u.first_name || ' ' || u.last_name AS student_name,
+        u.email AS student_email,
+        e.title AS exam_title,
+        e.total_marks, e.pass_mark,
+        es.score,
+        ROUND((es.score::numeric / NULLIF(e.total_marks, 0)) * 100, 1) AS percentage,
+        CASE WHEN es.score >= e.pass_mark THEN 'PASSED' ELSE 'FAILED' END AS status,
+        es.submitted_at,
+        c.name AS class_name,
+        s.name AS subject_name
+      FROM exam_sessions es
+      JOIN users u ON es.student_id = u.id
+      JOIN exams e ON es.exam_id = e.id
+      LEFT JOIN classes c ON u.class_id = c.id
+      LEFT JOIN subjects s ON e.subject_id = s.id
+      WHERE e.school_id = $1 AND es.status = 'submitted'`;
+
+    let params = [req.user.school_id];
+
+    if (exam_id) {
+      query += ' AND e.id = $2';
+      params.push(exam_id);
+    }
+
+    query += ' ORDER BY e.title, es.score DESC';
+
+    const result = await pool.query(query, params);
+
+    if (format === 'csv') {
+      const headers = ['Student Name', 'Email', 'Exam', 'Score', 'Total Marks', 'Percentage', 'Status', 'Class', 'Subject', 'Submitted At'];
+      const rows = result.rows.map(r => [
+        r.student_name, r.student_email, r.exam_title,
+        r.score, r.total_marks, `${r.percentage}%`, r.status,
+        r.class_name || 'N/A', r.subject_name || 'N/A',
+        new Date(r.submitted_at).toLocaleString()
+      ]);
+      const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=results.csv');
+      return res.send(csv);
+    }
+
+    // Excel format
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Results');
+
+    sheet.columns = [
+      { header: 'Student Name', key: 'student_name', width: 25 },
+      { header: 'Email', key: 'student_email', width: 30 },
+      { header: 'Exam', key: 'exam_title', width: 30 },
+      { header: 'Score', key: 'score', width: 10 },
+      { header: 'Total Marks', key: 'total_marks', width: 12 },
+      { header: 'Percentage', key: 'percentage', width: 12 },
+      { header: 'Status', key: 'status', width: 10 },
+      { header: 'Class', key: 'class_name', width: 15 },
+      { header: 'Subject', key: 'subject_name', width: 20 },
+      { header: 'Submitted At', key: 'submitted_at', width: 20 }
+    ];
+
+    // Style header row
+    sheet.getRow(1).eachCell(cell => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E3A5F' } };
+      cell.font = { color: { argb: 'FFFFFF' }, bold: true };
+      cell.alignment = { horizontal: 'center' };
+    });
+
+    result.rows.forEach(r => {
+      const row = sheet.addRow({
+        student_name: r.student_name,
+        student_email: r.student_email,
+        exam_title: r.exam_title,
+        score: r.score,
+        total_marks: r.total_marks,
+        percentage: `${r.percentage}%`,
+        status: r.status,
+        class_name: r.class_name || 'N/A',
+        subject_name: r.subject_name || 'N/A',
+        submitted_at: new Date(r.submitted_at).toLocaleString()
+      });
+
+      // Color passed/failed
+      const statusCell = row.getCell('status');
+      if (r.status === 'PASSED') {
+        statusCell.font = { color: { argb: '276749' }, bold: true };
+      } else {
+        statusCell.font = { color: { argb: '9B2C2C' }, bold: true };
+      }
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=results.xlsx');
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    console.error('Export error:', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   getStats, getUsers, toggleUserStatus, deleteUser,
   getExamResults, createUser, getPendingUsers,
-  approveUser, bulkApproveUsers, getSchoolSettings, updateSchoolSettings
+  approveUser, bulkApproveUsers, getSchoolSettings, 
+  updateSchoolSettings, exportResults
 };

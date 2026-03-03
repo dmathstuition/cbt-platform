@@ -4,7 +4,8 @@ const { protect, allowRoles } = require('../middleware/auth.middleware');
 const {
   getStats, getUsers, toggleUserStatus,
   deleteUser, getExamResults, createUser,
-  getPendingUsers, approveUser, bulkApproveUsers, getSchoolSettings, updateSchoolSettings
+  getPendingUsers, approveUser, bulkApproveUsers, 
+  getSchoolSettings, updateSchoolSettings, exportResults
 } = require('../controllers/admin.controller');
 
 router.use(protect);

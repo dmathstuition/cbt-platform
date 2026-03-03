@@ -28,6 +28,46 @@ function AllResults() {
     setFiltered(data);
   }, [search, filterStatus, results]);
 
+  const handleExportExcel = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(
+        'https://cbt-platform-m6kq.onrender.com/api/admin/export?format=excel',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) throw new Error('Failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'results.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Failed to export Excel');
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(
+        'https://cbt-platform-m6kq.onrender.com/api/admin/export?format=csv',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) throw new Error('Failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'results.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Failed to export CSV');
+    }
+  };
+
   const loadResults = async () => {
     try {
       const res = await API.get('/admin/results');
@@ -53,9 +93,17 @@ function AllResults() {
           <h1 style={styles.title}>All Exam Results 📊</h1>
           <p style={styles.subtitle}>{total} results found</p>
         </div>
-        <button style={styles.backBtn} onClick={() => navigate('/admin/dashboard')}>
-          ← Dashboard
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button style={styles.exportBtnExcel} onClick={handleExportExcel}>
+            📊 Export Excel
+          </button>
+          <button style={styles.exportBtnCSV} onClick={handleExportCSV}>
+            📄 Export CSV
+          </button>
+          <button style={styles.backBtn} onClick={() => navigate('/admin/dashboard')}>
+            ← Dashboard
+          </button>
+        </div>
       </div>
 
       {/* Summary Stats */}
@@ -211,7 +259,9 @@ const styles = {
   scoreBar: { backgroundColor: '#EEE', borderRadius: '4px', height: '6px', width: '60px', flexShrink: 0 },
   scoreFill: { height: '100%', borderRadius: '4px' },
   scoreText: { fontSize: '13px', fontWeight: '600', whiteSpace: 'nowrap' },
-  badge: { padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '700' }
+  badge: { padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '700' },
+  exportBtnExcel: { backgroundColor: '#276749', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' },
+  exportBtnCSV: { backgroundColor: '#2A4365', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' },
 };
 
 export default AllResults;
