@@ -2,11 +2,23 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useEffect } from 'react';
 
 function Login() {
   const params = new URLSearchParams(window.location.search);
   const justRegistered = params.get('registered');
-
+   
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    if (token && userData) {
+      const u = JSON.parse(userData);
+      if (u.role === 'student') navigate('/student/dashboard');
+      else if (u.role === 'school_admin' || u.role === 'super_admin') navigate('/admin/dashboard');
+      else if (u.role === 'parent') navigate('/parent/dashboard');
+      else navigate('/teacher/dashboard');
+    }
+  }, []);
   const [form, setForm] = useState({
     email: '',
     password: '',

@@ -19,6 +19,7 @@ router.delete('/users/:id', deleteUser);
 router.get('/results', getExamResults);
 router.get('/pending', getPendingUsers);
 router.patch('/users/:id/approve', approveUser);
+router.get('/export', exportResults);
 router.post('/users/bulk-approve', bulkApproveUsers);
 router.get('/school-settings', allowRoles('school_admin', 'super_admin'), getSchoolSettings);
 router.put('/school-settings', allowRoles('school_admin', 'super_admin'), updateSchoolSettings);
