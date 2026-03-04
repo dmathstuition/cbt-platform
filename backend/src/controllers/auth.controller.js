@@ -13,7 +13,7 @@ const register = async (req, res) => {
     }
 
    const schoolRes = await pool.query(
-      'SELECT id FROM schools WHERE id=$1 OR school_code=$1',
+      'SELECT id FROM schools WHERE school_code=$1 OR id::text=$1',
       [school_id]
     );
     if (schoolRes.rows.length === 0) {
@@ -61,8 +61,8 @@ const login = async (req, res) => {
     }
 
    // Accept either school_id (UUID) or school_code
-    const schoolRes = await pool.query(
-      'SELECT id FROM schools WHERE id=$1 OR school_code=$1',
+   const schoolRes = await pool.query(
+      'SELECT id FROM schools WHERE school_code=$1 OR id::text=$1',
       [school_id]
     );
     if (schoolRes.rows.length === 0) {
