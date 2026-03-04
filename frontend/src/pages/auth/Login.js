@@ -22,7 +22,7 @@ function Login() {
   const [form, setForm] = useState({
     email: '',
     password: '',
-    school_id: '65bd48c6-6ec1-4077-bf42-b6024f0147d7'
+    school_id: 'DMATHS001'
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -80,6 +80,14 @@ function Login() {
               id="password" name="password" type="password"
               className="form-input" placeholder="Enter your password"
               value={form.password} onChange={handleChange} required
+            />
+          </div>
+          <div className="form-group" style={{ marginBottom: '8px' }}>
+            <label className="form-label" htmlFor="school_id">School Code</label>
+            <input
+              id="school_id" name="school_id" type="text"
+              className="form-input" placeholder="Enter school code"
+              value={form.school_id} onChange={handleChange} required
             />
           </div>
           <button

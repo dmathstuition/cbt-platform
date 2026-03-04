@@ -12,9 +12,18 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
+   const schoolRes = await pool.query(
+      'SELECT id FROM schools WHERE id=$1 OR school_code=$1',
+      [school_id]
+    );
+    if (schoolRes.rows.length === 0) {
+      return res.status(400).json({ message: 'Invalid school code' });
+    }
+    const resolvedSchoolId = schoolRes.rows[0].id;
+
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE email=$1 AND school_id=$2',
-      [email, school_id]
+      [email, resolvedSchoolId]
     );
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ message: 'User already exists' });
@@ -26,7 +35,7 @@ const register = async (req, res) => {
     const status = role === 'student' && approval_status === 'pending' ? 'pending' : 'approved';
 
     const result = await pool.query(
-      `INSERT INTO users (first_name, last_name, email, password_hash, role, school_id, class_id, approval_status)
+      `INSERT INTO users [first_name, last_name, email, password_hash, role, resolvedSchoolId, class_id || null, status]
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, first_name, last_name, email, role, approval_status`,
       [first_name, last_name, email, password_hash, role, school_id, class_id || null, status]
     );
@@ -51,9 +60,19 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Email, password and school ID are required' });
     }
 
+   // Accept either school_id (UUID) or school_code
+    const schoolRes = await pool.query(
+      'SELECT id FROM schools WHERE id=$1 OR school_code=$1',
+      [school_id]
+    );
+    if (schoolRes.rows.length === 0) {
+      return res.status(401).json({ message: 'Invalid school code' });
+    }
+    const resolvedSchoolId = schoolRes.rows[0].id;
+
     const result = await pool.query(
       'SELECT * FROM users WHERE email=$1 AND school_id=$2 AND is_active=true',
-      [email, school_id]
+      [email, resolvedSchoolId]
     );
     if (result.rows.length === 0) {
       return res.status(401).json({ message: 'Invalid credentials' });

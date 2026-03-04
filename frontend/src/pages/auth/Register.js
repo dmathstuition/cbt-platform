@@ -7,7 +7,7 @@ function Register() {
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '',
     password: '', confirm_password: '', class_id: '',
-    school_id: '65bd48c6-6ec1-4077-bf42-b6024f0147d7'
+    school_id: 'DMATHS101'
   });
   const [classes, setClasses] = useState([]);
   const [error, setError] = useState('');
