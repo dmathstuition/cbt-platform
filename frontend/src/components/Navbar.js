@@ -66,6 +66,9 @@ function Navbar() {
           <div style={{ marginBottom: '12px' }}>
             <NotificationBell />
           </div>
+          <button style={styles.changePwBtn} onClick={() => navigate('/change-password')}>
+            🔐
+          </button>
           <button
             style={styles.mobileLogout}
             onClick={() => { handleLogout(); setMenuOpen(false); }}
@@ -124,7 +127,8 @@ const styles = {
     width: '100%', backgroundColor: '#E53E3E', color: 'white',
     border: 'none', padding: '12px', borderRadius: '8px',
     cursor: 'pointer', fontSize: '15px', fontWeight: '700'
-  }
+  },
+  changePwBtn: { background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' },
 };
 
 export default Navbar;

@@ -113,4 +113,42 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+// CHANGE PASSWORD
+const changePassword = async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+
+    if (!current_password || !new_password) {
+      return res.status(400).json({ message: 'Both current and new password are required' });
+    }
+    if (new_password.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    const result = await pool.query('SELECT * FROM users WHERE id=$1', [req.user.id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: 'User not found' });
+
+    const user = result.rows[0];
+    const validPassword = await bcrypt.compare(current_password, user.password);
+    if (!validPassword) return res.status(401).json({ message: 'Current password is incorrect' });
+
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE users SET password=$1 WHERE id=$2', [hashedPassword, req.user.id]);
+
+    const { logActivity } = require('./activity.controller');
+    await logActivity({
+      user_id: req.user.id,
+      school_id: req.user.school_id,
+      action: 'password_changed',
+      description: 'User changed their password',
+      metadata: {}
+    });
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change password error:', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { register, login, changePassword };
