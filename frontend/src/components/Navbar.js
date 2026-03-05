@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
@@ -7,6 +7,21 @@ function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
+
+  // Apply saved theme on first load
+  useEffect(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') {
+      setDarkMode(true);
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -23,24 +38,25 @@ function Navbar() {
         <div style={styles.brand}>📝 CBT Platform</div>
 
         {/* Desktop */}
-        <div style={styles.desktopRight} className="desktop-hide">
+        <div style={styles.desktopRight}>
           <span style={styles.welcome}>Welcome, {user.first_name}</span>
-          <span style={{
-            ...styles.roleBadge,
-            backgroundColor: roleColors[user.role] || '#718096'
-          }}>
+          <span style={{ ...styles.roleBadge, backgroundColor: roleColors[user.role] || '#718096' }}>
             {user.role}
           </span>
           <NotificationBell />
+          <button style={styles.darkBtn} onClick={() => setDarkMode(!darkMode)}
+            title="Toggle dark mode">
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+          <button style={styles.changePwBtn} onClick={() => navigate('/change-password')}
+            title="Change password">
+            🔐
+          </button>
           <button style={styles.logoutBtn} onClick={handleLogout}>Logout</button>
         </div>
 
         {/* Hamburger */}
-        <button
-          style={{...styles.hamburger, display: 'block'}}
-          className="mobile-show"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
+        <button style={styles.hamburger} onClick={() => setMenuOpen(!menuOpen)}>
           {menuOpen ? '✕' : '☰'}
         </button>
       </nav>
@@ -63,16 +79,18 @@ function Navbar() {
               </span>
             </div>
           </div>
-          <div style={{ marginBottom: '12px' }}>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
             <NotificationBell />
+            <button style={styles.darkBtn} onClick={() => setDarkMode(!darkMode)}>
+              {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+            </button>
           </div>
-          <button style={styles.changePwBtn} onClick={() => navigate('/change-password')}>
-            🔐
+          <button style={{ ...styles.changePwBtn, width: '100%', marginBottom: '10px', padding: '12px' }}
+            onClick={() => { navigate('/change-password'); setMenuOpen(false); }}>
+            🔐 Change Password
           </button>
-          <button
-            style={styles.mobileLogout}
-            onClick={() => { handleLogout(); setMenuOpen(false); }}
-          >
+          <button style={styles.mobileLogout}
+            onClick={() => { handleLogout(); setMenuOpen(false); }}>
             🚪 Logout
           </button>
         </div>
@@ -88,13 +106,18 @@ const styles = {
     boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
   },
   brand: { fontSize: '18px', fontWeight: '700', color: 'white' },
-  desktopRight: {
-    display: 'flex', alignItems: 'center', gap: '14px'
-  },
+  desktopRight: { display: 'flex', alignItems: 'center', gap: '14px' },
   welcome: { fontSize: '13px', color: '#A0AEC0' },
-  roleBadge: {
-    color: 'white', padding: '3px 10px', borderRadius: '12px',
-    fontSize: '11px', fontWeight: '700'
+  roleBadge: { color: 'white', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '700' },
+  darkBtn: {
+    background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+    color: 'white', padding: '6px 10px', borderRadius: '6px',
+    cursor: 'pointer', fontSize: '14px'
+  },
+  changePwBtn: {
+    background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+    color: 'white', padding: '6px 10px', borderRadius: '6px',
+    cursor: 'pointer', fontSize: '14px'
   },
   logoutBtn: {
     background: 'rgba(229,62,62,0.15)', color: '#FC8181',
@@ -103,19 +126,13 @@ const styles = {
     cursor: 'pointer', fontSize: '13px', fontWeight: '600'
   },
   hamburger: {
-    background: 'rgba(255,255,255,0.1)',
-    border: '1px solid rgba(255,255,255,0.2)',
-    color: 'white', fontSize: '18px',
-    padding: '6px 10px', borderRadius: '6px',
-    cursor: 'pointer'
+    background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+    color: 'white', fontSize: '18px', padding: '6px 10px',
+    borderRadius: '6px', cursor: 'pointer',
+    display: 'none'
   },
-  mobileMenu: {
-    backgroundColor: '#162d4a', padding: '16px 20px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-  },
-  mobileUser: {
-    display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px'
-  },
+  mobileMenu: { backgroundColor: '#162d4a', padding: '16px 20px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' },
+  mobileUser: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' },
   mobileAvatar: {
     width: '40px', height: '40px', borderRadius: '50%',
     backgroundColor: '#3182CE', color: 'white',
@@ -127,8 +144,7 @@ const styles = {
     width: '100%', backgroundColor: '#E53E3E', color: 'white',
     border: 'none', padding: '12px', borderRadius: '8px',
     cursor: 'pointer', fontSize: '15px', fontWeight: '700'
-  },
-  changePwBtn: { background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' },
+  }
 };
 
 export default Navbar;
