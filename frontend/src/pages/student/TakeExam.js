@@ -223,11 +223,11 @@ function TakeExam() {
               }
 
               {/* Fill in the Blank */}
+              {/* Fill in the Blank */}
               {question.type === 'fill_blank' && (
                 <div style={styles.fillBlank}>
                   <p style={styles.fillHint}>Type your answer below:</p>
-                  <input
-                    style={styles.fillInput}
+                  <input style={styles.fillInput}
                     placeholder="Your answer..."
                     value={answers[question.id] || ''}
                     onChange={e => {
@@ -235,6 +235,40 @@ function TakeExam() {
                       handleAnswer(question.id, e.target.value, 'text');
                     }}
                   />
+                </div>
+              )}
+
+              {/* Short Answer */}
+              {question.type === 'short_answer' && (
+                <div style={styles.fillBlank}>
+                  <p style={styles.fillHint}>Write a short answer (1-3 sentences):</p>
+                  <input style={styles.fillInput}
+                    placeholder="Your answer..."
+                    value={answers[question.id] || ''}
+                    onChange={e => {
+                      setAnswers({...answers, [question.id]: e.target.value});
+                      handleAnswer(question.id, e.target.value, 'text');
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Essay */}
+              {question.type === 'essay' && (
+                <div style={styles.fillBlank}>
+                  <p style={styles.fillHint}>Write your essay answer:</p>
+                  <textarea
+                    style={{...styles.fillInput, height: '180px', resize: 'vertical'}}
+                    placeholder="Write your detailed answer here..."
+                    value={answers[question.id] || ''}
+                    onChange={e => {
+                      setAnswers({...answers, [question.id]: e.target.value});
+                      handleAnswer(question.id, e.target.value, 'text');
+                    }}
+                  />
+                  <p style={{color: '#888', fontSize: '12px', marginTop: '6px'}}>
+                    {(answers[question.id] || '').length} characters
+                  </p>
                 </div>
               )}
             </div>

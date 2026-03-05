@@ -131,7 +131,7 @@ function QuestionBank() {
     }
   };
 
-  const typeLabel = { mcq: '🔘 MCQ', true_false: '✅ T/F', fill_blank: '✏️ Fill' };
+  const typeLabel = { mcq: '🔘 MCQ', true_false: '✅ T/F', fill_blank: '✏️ Fill', short_answer: '📝 Short', essay: '📄 Essay' };
   const diffColor = { easy: '#38A169', medium: '#D69E2E', hard: '#E53E3E' };
 
   return (
@@ -178,6 +178,8 @@ function QuestionBank() {
                   <option value="mcq">Multiple Choice</option>
                   <option value="true_false">True / False</option>
                   <option value="fill_blank">Fill in the Blank</option>
+                  <option value="short_answer">Short Answer</option>
+                  <option value="essay">Essay</option>
                 </select>
               </div>
               <div style={styles.field}>
@@ -267,14 +269,35 @@ function QuestionBank() {
               </div>
             )}
 
-            {newQuestion.type === 'fill_blank' && (
+           {newQuestion.type === 'fill_blank' && (
               <div style={styles.field}>
                 <label style={styles.label}>Correct Answer</label>
-                <input
-                  style={styles.input} required
+                <input style={styles.input} required
                   value={newQuestion.fillAnswer}
                   onChange={e => setNewQuestion({...newQuestion, fillAnswer: e.target.value})}
                   placeholder="Exact correct answer"
+                />
+              </div>
+            )}
+
+            {newQuestion.type === 'short_answer' && (
+              <div style={styles.field}>
+                <label style={styles.label}>Model Answer (for teacher reference)</label>
+                <input style={styles.input}
+                  value={newQuestion.fillAnswer}
+                  onChange={e => setNewQuestion({...newQuestion, fillAnswer: e.target.value})}
+                  placeholder="Expected answer (used for manual grading)"
+                />
+              </div>
+            )}
+
+            {newQuestion.type === 'essay' && (
+              <div style={styles.field}>
+                <label style={styles.label}>Marking Guide (optional)</label>
+                <textarea style={{...styles.input, height: '80px'}}
+                  value={newQuestion.fillAnswer}
+                  onChange={e => setNewQuestion({...newQuestion, fillAnswer: e.target.value})}
+                  placeholder="Key points to look for when marking..."
                 />
               </div>
             )}
@@ -304,7 +327,9 @@ function QuestionBank() {
           <option value="mcq">MCQ</option>
           <option value="true_false">True/False</option>
           <option value="fill_blank">Fill in Blank</option>
-        </select>
+          <option value="short_answer">Short Answer</option>
+           <option value="essay">Essay</option>
+            </select>
         <select style={{...styles.input, flex: 1}}
           value={filters.difficulty}
           onChange={e => setFilters({...filters, difficulty: e.target.value})}
