@@ -11,7 +11,7 @@ function Results() {
   const handleDownload = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/pdf/report-card', {
+      const res = await fetch('https://cbt-platform-m6kq.onrender.com/api/pdf/report-card', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const blob = await res.blob();
