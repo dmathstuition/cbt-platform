@@ -28,6 +28,7 @@ import BulkUpload from './pages/teacher/BulkUpload';
 import SchoolSettings from './pages/admin/SchoolSettings';
 import MissingStudents from './pages/teacher/MissingStudents';
 import EditExam from './pages/teacher/EditExam'; 
+import ChangePassword from './pages/auth/ChangePassword';
 import './App.css';
 
 
@@ -35,8 +36,7 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        {!window.location.pathname.includes('/login') && 
-        !window.location.pathname.includes('/register') && <Navbar />}
+        <Navbar />
         <Routes>
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />
@@ -161,6 +161,12 @@ function App() {
           <Route path="/admin/school-settings" element={
             <PrivateRoute allowedRoles={['school_admin', 'super_admin']}>
               <SchoolSettings />
+            </PrivateRoute>
+          } />
+
+          <Route path="/change-password" element={
+            <PrivateRoute allowedRoles={['student', 'teacher', 'school_admin', 'parent']}>
+              <ChangePassword />
             </PrivateRoute>
           } />
 

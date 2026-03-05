@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { useEffect } from 'react';
 
 function Login() {
   const params = new URLSearchParams(window.location.search);
   const justRegistered = params.get('registered');
-   
+  const [form, setForm] = useState({ email: '', password: '', school_id: 'DMATHS001' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
@@ -19,19 +23,8 @@ function Login() {
       else navigate('/teacher/dashboard');
     }
   }, []);
-  const [form, setForm] = useState({
-    email: '',
-    password: '',
-    school_id: 'DMATHS001'
-  });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,7 +48,7 @@ function Login() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-logo">📝</div>
-        <h1 className="login-title">CBT Platform</h1>
+        <h1 className="login-title">D-MATHS ACADEMY</h1>
         <p className="login-subtitle">Sign in to your account</p>
 
         {justRegistered && (
@@ -66,6 +59,14 @@ function Login() {
         {error && <div className="alert alert-error">{error}</div>}
 
         <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label" htmlFor="school_id">School Code</label>
+            <input
+              id="school_id" name="school_id" type="text"
+              className="form-input" placeholder="Enter school code e.g. DMATHS001"
+              value={form.school_id} onChange={handleChange} required
+            />
+          </div>
           <div className="form-group">
             <label className="form-label" htmlFor="email">Email Address</label>
             <input
@@ -82,30 +83,16 @@ function Login() {
               value={form.password} onChange={handleChange} required
             />
           </div>
-          <div className="form-group" style={{ marginBottom: '8px' }}>
-            <label className="form-label" htmlFor="school_id">School Code</label>
-            <input
-              id="school_id" name="school_id" type="text"
-              className="form-input" placeholder="Enter school code"
-              value={form.school_id} onChange={handleChange} required
-            />
-          </div>
-          <button
-            type="submit"
-            className="btn btn-primary btn-full btn-lg"
-            style={{ marginTop: '8px' }}
-            disabled={loading}
-          >
+          <button type="submit" className="btn btn-primary btn-full btn-lg"
+            style={{ marginTop: '8px' }} disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In →'}
           </button>
         </form>
 
         <p className="text-center text-muted mt-16">
           New student?{' '}
-          <span
-            style={{ color: '#3182CE', cursor: 'pointer', fontWeight: 600 }}
-            onClick={() => navigate('/register')}
-          >
+          <span style={{ color: '#3182CE', cursor: 'pointer', fontWeight: 600 }}
+            onClick={() => navigate('/register')}>
             Register here
           </span>
         </p>
