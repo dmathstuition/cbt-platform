@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
- baseURL: 'https://cbt-platform-m6kq.onrender.com/api',
+baseURL: process.env.REACT_APP_API_URL || 'https://cbt-platform-m6kq.onrender.com/api'
 });
 
 API.interceptors.request.use((config) => {
