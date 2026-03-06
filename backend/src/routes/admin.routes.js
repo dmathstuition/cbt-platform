@@ -4,8 +4,9 @@ const { protect, allowRoles } = require('../middleware/auth.middleware');
 const {
   getStats, getUsers, toggleUserStatus,
   deleteUser, getExamResults, createUser,
-  getPendingUsers, approveUser, bulkApproveUsers, 
-  getSchoolSettings, updateSchoolSettings, exportResults
+  getPendingUsers, approveUser, bulkApproveUsers,
+  getSchoolSettings, updateSchoolSettings, exportResults,
+  getExams, updateExamStatus, deleteExam
 } = require('../controllers/admin.controller');
 
 router.use(protect);
@@ -21,6 +22,9 @@ router.get('/pending', getPendingUsers);
 router.patch('/users/:id/approve', approveUser);
 router.get('/export', exportResults);
 router.post('/users/bulk-approve', bulkApproveUsers);
+router.get('/exams', getExams);
+router.patch('/exams/:id/status', updateExamStatus);
+router.delete('/exams/:id', deleteExam);
 router.get('/school-settings', allowRoles('school_admin', 'super_admin'), getSchoolSettings);
 router.put('/school-settings', allowRoles('school_admin', 'super_admin'), updateSchoolSettings);
 

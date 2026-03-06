@@ -381,9 +381,83 @@ const exportResults = async (req, res) => {
   }
 };
 
+const getExams = async (req, res) => {
+  try {
+    const { school_id } = req.user;
+    const result = await pool.query(`
+      SELECT 
+        e.id, e.title, e.type, e.status, e.duration_minutes,
+        e.pass_mark, e.total_marks, e.created_at,
+        u.first_name || ' ' || u.last_name AS created_by_name,
+        COUNT(DISTINCT eq.question_id) AS question_count,
+        COUNT(DISTINCT es.id) AS submission_count
+      FROM exams e
+      LEFT JOIN users u ON e.created_by = u.id
+      LEFT JOIN exam_questions eq ON e.id = eq.exam_id
+      LEFT JOIN exam_sessions es ON e.id = es.exam_id AND es.status = 'submitted'
+      WHERE e.school_id = $1
+      GROUP BY e.id, u.first_name, u.last_name
+      ORDER BY e.created_at DESC
+    `, [school_id]);
+    res.json({ exams: result.rows });
+  } catch (err) {
+    console.error('getExams error:', err);
+    res.status(500).json({ message: 'Failed to load exams' });
+  }
+};
+
+const updateExamStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const { school_id } = req.user;
+    const validStatuses = ['draft', 'active', 'scheduled', 'completed', 'archived'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    const result = await pool.query(
+      `UPDATE exams SET status = $1 WHERE id = $2 AND school_id = $3 RETURNING id, title, status`,
+      [status, id, school_id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Exam not found' });
+    }
+    await logActivity(req.user.id, school_id, 'exam_status_changed',
+      `Admin changed exam "${result.rows[0].title}" status to ${status}`);
+    res.json({ message: 'Status updated', exam: result.rows[0] });
+  } catch (err) {
+    console.error('updateExamStatus error:', err);
+    res.status(500).json({ message: 'Failed to update status' });
+  }
+};
+
+const deleteExam = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { school_id } = req.user;
+    const examRes = await pool.query(
+      `SELECT title FROM exams WHERE id = $1 AND school_id = $2`, [id, school_id]
+    );
+    if (examRes.rows.length === 0) {
+      return res.status(404).json({ message: 'Exam not found' });
+    }
+    const title = examRes.rows[0].title;
+    // Delete related records first
+    await pool.query(`DELETE FROM responses WHERE session_id IN (SELECT id FROM exam_sessions WHERE exam_id = $1)`, [id]);
+    await pool.query(`DELETE FROM exam_sessions WHERE exam_id = $1`, [id]);
+    await pool.query(`DELETE FROM exam_questions WHERE exam_id = $1`, [id]);
+    await pool.query(`DELETE FROM exams WHERE id = $1`, [id]);
+    await logActivity(req.user.id, school_id, 'exam_deleted', `Admin deleted exam "${title}"`);
+    res.json({ message: 'Exam deleted successfully' });
+  } catch (err) {
+    console.error('deleteExam error:', err);
+    res.status(500).json({ message: 'Failed to delete exam' });
+  }
+};
+
 module.exports = {
   getStats, getUsers, toggleUserStatus, deleteUser,
   getExamResults, createUser, getPendingUsers,
   approveUser, bulkApproveUsers, getSchoolSettings, 
-  updateSchoolSettings, exportResults
+  updateSchoolSettings, exportResults,getExams, updateExamStatus, deleteExam
 };

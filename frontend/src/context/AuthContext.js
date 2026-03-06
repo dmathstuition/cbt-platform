@@ -61,7 +61,7 @@ export function applyTheme(role) {
   Object.entries(theme).forEach(([key, value]) => root.style.setProperty(key, value));
 }
 
-const AuthContext = createContext();
+ 
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
