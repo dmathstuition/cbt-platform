@@ -159,11 +159,11 @@ function App() {
          </PrivateRoute>
           } />
 
-          <Route path="/teacher/exam/:id/grade" element={
-            <ProtectedRoute roles={['teacher','school_admin']}>
+         <Route path="/teacher/exam/:id/grade" element={
+            <PrivateRoute allowedRoles={['teacher','school_admin']}>
               <GradeSubmissions />
-              </ProtectedRoute>
-            } />
+            </PrivateRoute>
+          } />
 
           <Route path="/admin/school-settings" element={
             <PrivateRoute allowedRoles={['school_admin', 'super_admin']}>
