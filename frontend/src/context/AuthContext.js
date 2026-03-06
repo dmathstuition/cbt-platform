@@ -85,11 +85,12 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = (userData, userToken) => {
+  const login = (userData, userToken, userRefreshToken) => {
     setUser(userData);
     setToken(userToken);
     localStorage.setItem('token', userToken);
     localStorage.setItem('user', JSON.stringify(userData));
+    if (userRefreshToken) localStorage.setItem('refreshToken', userRefreshToken);
     applyTheme(userData.role);
   };
 
@@ -98,7 +99,9 @@ export function AuthProvider({ children }) {
     setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+     localStorage.removeItem('refreshToken');
     document.documentElement.removeAttribute('data-theme');
+   
     // Reset role theme
     const root = document.documentElement;
     ['--role-primary','--role-secondary','--role-accent','--role-gradient',

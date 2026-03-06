@@ -32,7 +32,7 @@ function Login() {
     setError('');
     try {
       const res = await authAPI.login(form);
-      login(res.data.user, res.data.token);
+      login(res.data.user, res.data.token, res.data.refreshToken);
       const role = res.data.user.role;
       if (role === 'student') navigate('/student/dashboard');
       else if (role === 'school_admin' || role === 'super_admin') navigate('/admin/dashboard');
