@@ -82,9 +82,14 @@ function AdminDashboard() {
           <h1 style={styles.title}>Admin Dashboard</h1>
           <p style={styles.subtitle}>School overview and management</p>
         </div>
-        <button style={styles.notifyBtn} onClick={() => navigate('/admin/notifications')}>
-          📢 Send Notification
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button style={styles.reportsBtn} onClick={() => navigate('/admin/reports')}>
+            📈 Reports
+          </button>
+          <button style={styles.notifyBtn} onClick={() => navigate('/admin/notifications')}>
+            📢 Notify
+          </button>
+        </div>
       </div>
 
       {/* Pending Approvals Banner */}
@@ -274,7 +279,8 @@ const styles = {
   actionCard: { backgroundColor: 'white', borderRadius: '12px', padding: '14px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', border: '1px solid #EEE', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', textAlign: 'left', width: '100%' },
   actionIcon: { fontSize: '26px', flexShrink: 0 },
   actionTitle: { fontWeight: '700', color: '#1E3A5F', marginBottom: '3px', fontSize: '14px' },
-  actionDesc: { color: '#666', fontSize: '12px' }
+  actionDesc: { color: '#666', fontSize: '12px' },
+  reportsBtn: { backgroundColor: '#805AD5', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '14px' },
 };
 
 export default AdminDashboard;

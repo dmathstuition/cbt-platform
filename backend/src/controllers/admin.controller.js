@@ -468,9 +468,152 @@ const deleteExam = async (req, res) => {
   }
 };
 
+const getReports = async (req, res) => {
+  try {
+    const { school_id } = req.user;
+
+    // Overview stats
+    const overviewRes = await pool.query(`
+      SELECT
+        (SELECT COUNT(*) FROM exams WHERE school_id=$1) AS total_exams,
+        (SELECT COUNT(*) FROM exams WHERE school_id=$1 AND status='active') AS active_exams,
+        (SELECT COUNT(*) FROM exam_sessions es JOIN exams e ON es.exam_id=e.id WHERE e.school_id=$1 AND es.status='submitted') AS total_submissions,
+        (SELECT COUNT(DISTINCT es.student_id) FROM exam_sessions es JOIN exams e ON es.exam_id=e.id WHERE e.school_id=$1 AND es.status='submitted') AS unique_students,
+        (SELECT COUNT(*) FROM users WHERE school_id=$1 AND role='student' AND is_active=true) AS total_students,
+        (SELECT COUNT(*) FROM users WHERE school_id=$1 AND role='student' AND is_active=true AND approval_status='approved') AS active_students,
+        (SELECT COUNT(*) FROM users WHERE school_id=$1 AND role='teacher' AND is_active=true) AS total_teachers,
+        (SELECT COUNT(*) FROM exam_sessions es JOIN exams e ON es.exam_id=e.id WHERE e.school_id=$1 AND es.status='submitted' AND es.score >= (e.pass_mark * e.total_marks / 100.0)) AS passed,
+        (SELECT COUNT(*) FROM exam_sessions es JOIN exams e ON es.exam_id=e.id WHERE e.school_id=$1 AND es.status='submitted' AND es.score < (e.pass_mark * e.total_marks / 100.0)) AS failed,
+        COALESCE((SELECT ROUND(AVG(es.score * 100.0 / NULLIF(e.total_marks,0)),1) FROM exam_sessions es JOIN exams e ON es.exam_id=e.id WHERE e.school_id=$1 AND es.status='submitted'), 0) AS avg_score
+    `, [school_id]);
+
+    const ov = overviewRes.rows[0];
+    const passRate = ov.total_submissions > 0
+      ? Math.round((ov.passed / ov.total_submissions) * 100) : 0;
+
+    // Exam performance
+    const examPerfRes = await pool.query(`
+      SELECT
+        e.id, e.title, e.status, e.pass_mark, e.total_marks,
+        COUNT(es.id) AS submissions,
+        COALESCE(ROUND(AVG(es.score * 100.0 / NULLIF(e.total_marks,0)),1),0) AS avg_score,
+        COALESCE(ROUND(MAX(es.score * 100.0 / NULLIF(e.total_marks,0)),1),0) AS highest,
+        COALESCE(ROUND(MIN(es.score * 100.0 / NULLIF(e.total_marks,0)),1),0) AS lowest,
+        COALESCE(ROUND(
+          SUM(CASE WHEN es.score >= (e.pass_mark * e.total_marks / 100.0) THEN 1 ELSE 0 END) * 100.0
+          / NULLIF(COUNT(es.id),0)
+        ,1),0) AS pass_rate,
+        SUM(CASE WHEN es.score >= (e.pass_mark * e.total_marks / 100.0) THEN 1 ELSE 0 END) AS passed_count,
+        SUM(CASE WHEN es.score < (e.pass_mark * e.total_marks / 100.0) THEN 1 ELSE 0 END) AS failed_count
+      FROM exams e
+      LEFT JOIN exam_sessions es ON es.exam_id=e.id AND es.status='submitted'
+      WHERE e.school_id=$1
+      GROUP BY e.id
+      ORDER BY e.created_at DESC
+      LIMIT 20
+    `, [school_id]);
+
+    const examPerformance = examPerfRes.rows.map(e => ({
+      ...e,
+      name: e.title.length > 16 ? e.title.substring(0, 16) + '...' : e.title,
+      Passed: parseInt(e.passed_count) || 0,
+      Failed: parseInt(e.failed_count) || 0,
+      submissions: parseInt(e.submissions) || 0,
+      avg_score: parseFloat(e.avg_score) || 0,
+      pass_rate: parseFloat(e.pass_rate) || 0,
+      highest: parseFloat(e.highest) || 0,
+      lowest: parseFloat(e.lowest) || 0,
+    }));
+
+    // Top students
+    const topStudentsRes = await pool.query(`
+      SELECT
+        u.first_name || ' ' || u.last_name AS name,
+        c.name AS class_name,
+        COUNT(es.id) AS exams_taken,
+        ROUND(AVG(es.score * 100.0 / NULLIF(e.total_marks,0)),1) AS avg_score
+      FROM users u
+      LEFT JOIN exam_sessions es ON es.student_id=u.id AND es.status='submitted'
+      LEFT JOIN exams e ON es.exam_id=e.id
+      LEFT JOIN classes c ON u.class_id=c.id
+      WHERE u.school_id=$1 AND u.role='student' AND u.is_active=true
+      GROUP BY u.id, c.name
+      HAVING COUNT(es.id) > 0
+      ORDER BY avg_score DESC
+      LIMIT 15
+    `, [school_id]);
+
+    // Subject stats
+    const subjectRes = await pool.query(`
+      SELECT
+        s.name AS subject,
+        COUNT(es.id) AS submissions,
+        COALESCE(ROUND(AVG(es.score * 100.0 / NULLIF(e.total_marks,0)),1),0) AS avg_score,
+        COALESCE(ROUND(
+          SUM(CASE WHEN es.score >= (e.pass_mark * e.total_marks / 100.0) THEN 1 ELSE 0 END) * 100.0
+          / NULLIF(COUNT(es.id),0)
+        ,1),0) AS pass_rate
+      FROM exams e
+      LEFT JOIN exam_sessions es ON es.exam_id=e.id AND es.status='submitted'
+      LEFT JOIN subjects s ON e.subject_id=s.id
+      WHERE e.school_id=$1 AND s.name IS NOT NULL
+      GROUP BY s.id
+      ORDER BY avg_score DESC
+    `, [school_id]);
+
+    // Class stats
+    const classRes = await pool.query(`
+      SELECT
+        c.name AS class_name,
+        COUNT(DISTINCT u.id) AS students,
+        COUNT(es.id) AS submissions,
+        COALESCE(ROUND(AVG(es.score * 100.0 / NULLIF(e.total_marks,0)),1),0) AS avg_score,
+        COALESCE(ROUND(
+          SUM(CASE WHEN es.score >= (e.pass_mark * e.total_marks / 100.0) THEN 1 ELSE 0 END) * 100.0
+          / NULLIF(COUNT(es.id),0)
+        ,1),0) AS pass_rate
+      FROM classes c
+      LEFT JOIN users u ON u.class_id=c.id AND u.role='student'
+      LEFT JOIN exam_sessions es ON es.student_id=u.id AND es.status='submitted'
+      LEFT JOIN exams e ON es.exam_id=e.id
+      WHERE c.school_id=$1
+      GROUP BY c.id
+      ORDER BY avg_score DESC
+    `, [school_id]);
+
+    // Monthly trend (last 6 months)
+    const trendRes = await pool.query(`
+      SELECT
+        TO_CHAR(es.submitted_at, 'Mon YY') AS month,
+        DATE_TRUNC('month', es.submitted_at) AS month_date,
+        COUNT(*) AS submissions,
+        SUM(CASE WHEN es.score >= (e.pass_mark * e.total_marks / 100.0) THEN 1 ELSE 0 END) AS passed
+      FROM exam_sessions es
+      JOIN exams e ON es.exam_id=e.id
+      WHERE e.school_id=$1 AND es.status='submitted'
+      AND es.submitted_at >= NOW() - INTERVAL '6 months'
+      GROUP BY month_date, month
+      ORDER BY month_date ASC
+    `, [school_id]);
+
+    res.json({
+      overview: { ...ov, pass_rate: passRate },
+      examPerformance,
+      topStudents: topStudentsRes.rows,
+      subjectStats: subjectRes.rows,
+      classStats: classRes.rows,
+      monthlyTrend: trendRes.rows
+    });
+
+  } catch (err) {
+    console.error('getReports error:', err);
+    res.status(500).json({ message: 'Failed to load reports' });
+  }
+};
+
 module.exports = {
   getStats, getUsers, toggleUserStatus, deleteUser,
   getExamResults, createUser, getPendingUsers,
   approveUser, bulkApproveUsers, getSchoolSettings, 
-  updateSchoolSettings, exportResults,getExams, updateExamStatus, deleteExam
+  updateSchoolSettings, exportResults,getExams, updateExamStatus, deleteExam,getReports
 };

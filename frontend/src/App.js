@@ -39,6 +39,7 @@ const SchoolSettings    = lazy(() => import('./pages/admin/SchoolSettings'));
 
 const ParentDashboard   = lazy(() => import('./pages/parent/Dashboard'));
 const ChangePassword    = lazy(() => import('./pages/auth/ChangePassword'));
+const Reports           = lazy(() => import('./pages/admin/Reports'));
 
 function App() {
   return (
@@ -124,6 +125,9 @@ function App() {
             } />
             <Route path="/admin/school-settings" element={
               <PrivateRoute allowedRoles={['school_admin','super_admin']}><SchoolSettings /></PrivateRoute>
+            } />
+            <Route path="/admin/reports" element={
+              <PrivateRoute allowedRoles={['school_admin','super_admin']}><Reports /></PrivateRoute>
             } />
 
             {/* Parent */}
