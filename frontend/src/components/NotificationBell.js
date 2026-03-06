@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 
 function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
-const dropdownRef = useRef(null);
+  const [hasNew, setHasNew] = useState(false);
+  const dropdownRef = useRef(null);
+  const prevUnread = useRef(0);
 
   useEffect(() => {
     loadNotifications();
-    const interval = setInterval(loadNotifications, 30000);
+    const interval = setInterval(loadNotifications, 20000); // poll every 20s
     return () => clearInterval(interval);
   }, []);
 
@@ -27,25 +28,32 @@ const dropdownRef = useRef(null);
   const loadNotifications = async () => {
     try {
       const res = await API.get('/notifications');
+      const newUnread = res.data.unread_count;
+      // Pulse animation if new notifications arrived
+      if (newUnread > prevUnread.current) setHasNew(true);
+      prevUnread.current = newUnread;
       setNotifications(res.data.notifications);
-      setUnread(res.data.unread_count);
+      setUnread(newUnread);
     } catch (err) {}
+  };
+
+  const handleOpen = () => {
+    setOpen(!open);
+    setHasNew(false);
   };
 
   const handleMarkAllRead = async () => {
     try {
       await API.patch('/notifications/read-all');
       setUnread(0);
-      setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     } catch (err) {}
   };
 
   const handleMarkRead = async (id) => {
     try {
       await API.patch(`/notifications/${id}/read`);
-      setNotifications(notifications.map(n =>
-        n.id === id ? { ...n, is_read: true } : n
-      ));
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
       setUnread(prev => Math.max(0, prev - 1));
     } catch (err) {}
   };
@@ -53,20 +61,18 @@ const dropdownRef = useRef(null);
   const handleDelete = async (e, id) => {
     e.stopPropagation();
     try {
-      await API.delete(`/notifications/${id}`);
-      setNotifications(notifications.filter(n => n.id !== id));
       const wasUnread = notifications.find(n => n.id === id && !n.is_read);
+      await API.delete(`/notifications/${id}`);
+      setNotifications(prev => prev.filter(n => n.id !== id));
       if (wasUnread) setUnread(prev => Math.max(0, prev - 1));
     } catch (err) {}
   };
 
-  const typeColors = {
-    success: '#38A169', error: '#E53E3E',
-    warning: '#D69E2E', info: '#3182CE'
-  };
-
-  const typeIcons = {
-    success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️'
+  const typeConfig = {
+    success: { icon: '🎉', color: '#38A169', bg: '#F0FFF4', border: '#68D391' },
+    error:   { icon: '❌', color: '#E53E3E', bg: '#FFF5F5', border: '#FC8181' },
+    warning: { icon: '⚠️', color: '#C9860A', bg: '#FFFBEB', border: '#FAD080' },
+    info:    { icon: 'ℹ️', color: '#3182CE', bg: '#EBF8FF', border: '#90CDF4' },
   };
 
   const timeAgo = (date) => {
@@ -77,137 +83,219 @@ const dropdownRef = useRef(null);
     return `${Math.floor(seconds / 86400)}d ago`;
   };
 
+  const unreadNotifs = notifications.filter(n => !n.is_read);
+  const readNotifs = notifications.filter(n => n.is_read);
+
   return (
-    <div ref={dropdownRef} style={styles.wrapper}>
-      {/* Bell Button */}
-      <button style={styles.bellBtn} onClick={() => setOpen(!open)}>
-        🔔
-        {unread > 0 && (
-          <span style={styles.badge}>{unread > 99 ? '99+' : unread}</span>
-        )}
-      </button>
+    <>
+      <style>{`
+        @keyframes bellRing {
+          0%,100% { transform: rotate(0deg); }
+          15% { transform: rotate(15deg); }
+          30% { transform: rotate(-15deg); }
+          45% { transform: rotate(10deg); }
+          60% { transform: rotate(-10deg); }
+          75% { transform: rotate(5deg); }
+        }
+        @keyframes badgePop {
+          0% { transform: scale(0); }
+          70% { transform: scale(1.2); }
+          100% { transform: scale(1); }
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .notif-item:hover { background-color: var(--card-bg-2, #F8FAFC) !important; }
+        .notif-delete:hover { color: #E53E3E !important; }
+      `}</style>
 
-      {/* Dropdown */}
-      {open && (
-        <div style={styles.dropdown}>
-          <div style={styles.dropHeader}>
-            <span style={styles.dropTitle}>Notifications</span>
-            {unread > 0 && (
-              <button style={styles.markAllBtn} onClick={handleMarkAllRead}>
-                Mark all read
-              </button>
-            )}
-          </div>
-
-          <div style={styles.dropBody}>
-            {notifications.length === 0 ? (
-              <div style={styles.empty}>
-                <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔔</div>
-                <p>No notifications yet</p>
-              </div>
-            ) : (
-              notifications.map(n => (
-                <div
-                  key={n.id}
-                  style={{
-                    ...styles.notifItem,
-                    backgroundColor: n.is_read ? 'white' : '#EBF8FF'
-                  }}
-                  onClick={() => handleMarkRead(n.id)}
-                >
-                  <div style={styles.notifIcon}>
-                    {typeIcons[n.type] || 'ℹ️'}
-                  </div>
-                  <div style={styles.notifContent}>
-                    <div style={{
-                      ...styles.notifTitle,
-                      color: typeColors[n.type] || '#3182CE'
-                    }}>
-                      {n.title}
-                    </div>
-                    <div style={styles.notifMsg}>{n.message}</div>
-                    <div style={styles.notifTime}>{timeAgo(n.created_at)}</div>
-                  </div>
-                  <button
-                    style={styles.deleteBtn}
-                    onClick={(e) => handleDelete(e, n.id)}
-                  >
-                    ✕
-                  </button>
-                  {!n.is_read && <div style={styles.unreadDot} />}
-                </div>
-              ))
-            )}
-          </div>
-
-          {notifications.length > 0 && (
-            <div style={styles.dropFooter}>
-              <span style={{ color: '#888', fontSize: '12px' }}>
-                {notifications.length} notification(s)
-              </span>
-            </div>
+      <div ref={dropdownRef} style={{ position: 'relative' }}>
+        {/* Bell Button */}
+        <button onClick={handleOpen} style={{
+          background: open ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          color: 'white', fontSize: '18px',
+          width: '38px', height: '38px', borderRadius: '10px',
+          cursor: 'pointer', position: 'relative',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: hasNew ? 'bellRing 0.6s ease' : 'none',
+          transition: 'background 0.2s'
+        }}>
+          🔔
+          {unread > 0 && (
+            <span style={{
+              position: 'absolute', top: '-5px', right: '-5px',
+              backgroundColor: '#E53E3E', color: 'white',
+              borderRadius: '10px', fontSize: '10px', fontWeight: '800',
+              padding: '1px 5px', minWidth: '17px', textAlign: 'center',
+              border: '2px solid var(--role-nav, #1A2F5E)',
+              animation: 'badgePop 0.3s ease'
+            }}>
+              {unread > 99 ? '99+' : unread}
+            </span>
           )}
+        </button>
+
+        {/* Dropdown */}
+        {open && (
+          <div style={{
+            position: 'absolute', right: 0, top: '46px',
+            width: '360px',
+            background: 'var(--card-bg, white)',
+            borderRadius: '16px',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
+            zIndex: 1000, overflow: 'hidden',
+            border: '1px solid var(--border, #E2E8F0)',
+            animation: 'slideDown 0.2s ease'
+          }}>
+            {/* Header */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '14px 16px',
+              borderBottom: '1px solid var(--border, #EEE)',
+              background: 'var(--role-primary, #1A2F5E)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: 'white', fontWeight: '800', fontSize: '15px' }}>
+                  🔔 Notifications
+                </span>
+                {unread > 0 && (
+                  <span style={{
+                    backgroundColor: '#E53E3E', color: 'white',
+                    padding: '2px 8px', borderRadius: '20px',
+                    fontSize: '11px', fontWeight: '700'
+                  }}>{unread} new</span>
+                )}
+              </div>
+              {unread > 0 && (
+                <button onClick={handleMarkAllRead} style={{
+                  background: 'rgba(255,255,255,0.15)', border: 'none',
+                  color: 'white', cursor: 'pointer',
+                  fontSize: '11px', fontWeight: '700',
+                  padding: '4px 10px', borderRadius: '6px'
+                }}>
+                  ✓ Mark all read
+                </button>
+              )}
+            </div>
+
+            {/* Body */}
+            <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
+              {notifications.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '40px', marginBottom: '10px' }}>🔔</div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+                    No notifications yet
+                  </p>
+                  <p style={{ color: 'var(--text-light)', fontSize: '12px', marginTop: '4px' }}>
+                    Exam alerts and results will appear here
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Unread section */}
+                  {unreadNotifs.length > 0 && (
+                    <>
+                      <div style={styles.sectionLabel}>New</div>
+                      {unreadNotifs.map(n => (
+                        <NotifItem key={n.id} n={n} typeConfig={typeConfig}
+                          timeAgo={timeAgo} onRead={handleMarkRead} onDelete={handleDelete} />
+                      ))}
+                    </>
+                  )}
+                  {/* Read section */}
+                  {readNotifs.length > 0 && (
+                    <>
+                      {unreadNotifs.length > 0 && (
+                        <div style={styles.sectionLabel}>Earlier</div>
+                      )}
+                      {readNotifs.slice(0, 15).map(n => (
+                        <NotifItem key={n.id} n={n} typeConfig={typeConfig}
+                          timeAgo={timeAgo} onRead={handleMarkRead} onDelete={handleDelete} />
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            {notifications.length > 0 && (
+              <div style={{
+                padding: '10px 16px', borderTop: '1px solid var(--border, #EEE)',
+                background: 'var(--card-bg-2, #F7FAFC)',
+                textAlign: 'center',
+                color: 'var(--text-muted)', fontSize: '12px'
+              }}>
+                {notifications.length} total notification(s)
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function NotifItem({ n, typeConfig, timeAgo, onRead, onDelete }) {
+  const cfg = typeConfig[n.type] || typeConfig.info;
+  return (
+    <div className="notif-item" onClick={() => onRead(n.id)} style={{
+      display: 'flex', gap: '10px', padding: '12px 16px',
+      borderBottom: '1px solid var(--border-light, #F7FAFC)',
+      cursor: 'pointer', alignItems: 'flex-start',
+      backgroundColor: n.is_read ? 'var(--card-bg, white)' : cfg.bg,
+      borderLeft: n.is_read ? 'none' : `3px solid ${cfg.border}`,
+      transition: 'background 0.15s'
+    }}>
+      <div style={{
+        width: '34px', height: '34px', borderRadius: '10px',
+        backgroundColor: cfg.bg, border: `1px solid ${cfg.border}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '16px', flexShrink: 0
+      }}>
+        {cfg.icon}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontWeight: n.is_read ? '600' : '800',
+          fontSize: '13px', color: cfg.color, marginBottom: '3px'
+        }}>
+          {n.title}
         </div>
-      )}
+        <div style={{
+          color: 'var(--text-muted)', fontSize: '12px',
+          lineHeight: '1.5', marginBottom: '5px'
+        }}>
+          {n.message}
+        </div>
+        <div style={{ color: 'var(--text-light)', fontSize: '11px' }}>
+          {timeAgo(n.created_at)}
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+        <button className="notif-delete" onClick={(e) => onDelete(e, n.id)} style={{
+          background: 'none', border: 'none', color: 'var(--text-light)',
+          cursor: 'pointer', fontSize: '12px', padding: '2px 4px', lineHeight: 1
+        }}>✕</button>
+        {!n.is_read && (
+          <div style={{
+            width: '8px', height: '8px', borderRadius: '50%',
+            backgroundColor: cfg.color
+          }} />
+        )}
+      </div>
     </div>
   );
 }
 
 const styles = {
-  wrapper: { position: 'relative' },
-  bellBtn: {
-    background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-    color: 'white', fontSize: '18px', padding: '6px 10px',
-    borderRadius: '8px', cursor: 'pointer', position: 'relative'
-  },
-  badge: {
-    position: 'absolute', top: '-6px', right: '-6px',
-    backgroundColor: '#E53E3E', color: 'white',
-    borderRadius: '10px', fontSize: '10px', fontWeight: '700',
-    padding: '1px 5px', minWidth: '16px', textAlign: 'center'
-  },
-  dropdown: {
-    position: 'absolute', right: 0, top: '46px',
-    width: '340px', backgroundColor: 'white',
-    borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-    zIndex: 1000, overflow: 'hidden',
-    border: '1px solid #E2E8F0'
-  },
-  dropHeader: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '14px 16px', borderBottom: '1px solid #EEE',
-    backgroundColor: '#F7FAFC'
-  },
-  dropTitle: { fontWeight: '700', color: '#1E3A5F', fontSize: '15px' },
-  markAllBtn: {
-    background: 'none', border: 'none', color: '#3182CE',
-    cursor: 'pointer', fontSize: '12px', fontWeight: '600'
-  },
-  dropBody: { maxHeight: '380px', overflowY: 'auto' },
-  empty: { padding: '32px', textAlign: 'center', color: '#888', fontSize: '14px' },
-  notifItem: {
-    display: 'flex', gap: '10px', padding: '12px 16px',
-    borderBottom: '1px solid #F7FAFC', cursor: 'pointer',
-    position: 'relative', alignItems: 'flex-start',
-    transition: 'background 0.15s'
-  },
-  notifIcon: { fontSize: '20px', flexShrink: 0, marginTop: '2px' },
-  notifContent: { flex: 1, minWidth: 0 },
-  notifTitle: { fontWeight: '700', fontSize: '13px', marginBottom: '3px' },
-  notifMsg: { color: '#555', fontSize: '12px', lineHeight: '1.4', marginBottom: '4px' },
-  notifTime: { color: '#AAA', fontSize: '11px' },
-  deleteBtn: {
-    background: 'none', border: 'none', color: '#CCC',
-    cursor: 'pointer', fontSize: '12px', padding: '2px',
-    flexShrink: 0, lineHeight: 1
-  },
-  unreadDot: {
-    width: '8px', height: '8px', borderRadius: '50%',
-    backgroundColor: '#3182CE', flexShrink: 0, marginTop: '6px'
-  },
-  dropFooter: {
-    padding: '10px 16px', borderTop: '1px solid #EEE',
-    backgroundColor: '#F7FAFC', textAlign: 'center'
+  sectionLabel: {
+    padding: '6px 16px', fontSize: '11px', fontWeight: '800',
+    color: 'var(--text-light)', textTransform: 'uppercase',
+    letterSpacing: '0.5px', background: 'var(--card-bg-2, #F7FAFC)',
+    borderBottom: '1px solid var(--border-light, #EEE)'
   }
 };
 

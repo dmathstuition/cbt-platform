@@ -225,16 +225,31 @@ const submitExam = async (req, res) => {
 
     const studentData = student.rows[0];
 
-    sendResultEmail({
-      to: studentData.email,
-      studentName: `${studentData.first_name} ${studentData.last_name}`,
-      examTitle: examData.title,
-      score: totalScore,
-      totalMarks: examData.total_marks,
-      percentage,
-      passed,
-      passedMark: examData.pass_mark
-    });
+    // Send result email (non-blocking)
+    try {
+      sendResultEmail({
+        to: studentData.email,
+        studentName: `${studentData.first_name} ${studentData.last_name}`,
+        examTitle: examData.title,
+        score: totalScore,
+        totalMarks: examData.total_marks,
+        percentage,
+        passed,
+        passedMark: examData.pass_mark
+      });
+    } catch (e) { /* non-blocking */ }
+
+    // In-app result notification
+    try {
+      const { createNotification } = require('./notification.controller');
+      await createNotification({
+        user_id: req.user.id,
+        school_id: req.user.school_id,
+        title: passed ? `🎉 You passed: ${examData.title}` : `📋 Result: ${examData.title}`,
+        message: `You scored ${totalScore}/${examData.total_marks} (${percentage}%) — ${passed ? 'PASSED ✅' : 'FAILED ❌'}. Pass mark was ${examData.pass_mark}%.`,
+        type: passed ? 'success' : 'warning'
+      });
+    } catch (e) { /* non-blocking */ }
 
     const { logActivity } = require('./activity.controller');
     await logActivity({
