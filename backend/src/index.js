@@ -54,6 +54,8 @@ app.use('/api/auth', authLimiter);
 // Database connection + auto migration
 require('./config/database');
 require('./config/migrate');
+const { createIndexes } = require('./config/indexes');
+createIndexes().catch(err => console.warn('Index creation warning:', err.message));
 
 // Routes
 const routes = [
