@@ -29,6 +29,7 @@ import SchoolSettings from './pages/admin/SchoolSettings';
 import MissingStudents from './pages/teacher/MissingStudents';
 import EditExam from './pages/teacher/EditExam'; 
 import ChangePassword from './pages/auth/ChangePassword';
+import GradeSubmissions from './pages/teacher/GradeSubmissions';
 import './App.css';
 
 
@@ -157,6 +158,12 @@ function App() {
         <EditExam />
          </PrivateRoute>
           } />
+
+          <Route path="/teacher/exam/:id/grade" element={
+            <ProtectedRoute roles={['teacher','school_admin']}>
+              <GradeSubmissions />
+              </ProtectedRoute>
+            } />
 
           <Route path="/admin/school-settings" element={
             <PrivateRoute allowedRoles={['school_admin', 'super_admin']}>

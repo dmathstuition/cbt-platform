@@ -229,6 +229,10 @@ function TeacherDashboard() {
                   onClick={() => navigate(`/teacher/exam/${exam.id}/results`)}>
                   📊 Results
                 </button>
+                <button style={{...styles.actionBtn, backgroundColor: '#E07B20'}}
+                  onClick={() => navigate(`/teacher/exam/${exam.id}/grade`)}>
+                  ✍️ Grade
+                </button>
                 <button style={{...styles.actionBtn, backgroundColor: '#E53E3E'}}
                   onClick={() => handleDelete(exam.id)}>
                   🗑️

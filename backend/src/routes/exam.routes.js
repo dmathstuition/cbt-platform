@@ -15,5 +15,8 @@ router.delete('/:id', allowRoles('teacher', 'school_admin', 'super_admin'), dele
 router.get('/:id/results', allowRoles('teacher', 'school_admin'), getExamResults);
 router.get('/:id/missing-students', allowRoles('teacher', 'school_admin'), getMissingStudents);
 router.put('/:id', allowRoles('teacher', 'school_admin'), updateExam);
+router.get('/:id/grading', allowRoles('teacher', 'school_admin'), getGradingSessions);
+router.get('/:id/grading/:sessionId', allowRoles('teacher', 'school_admin'), getSessionAnswers);
+router.post('/:id/grading/:sessionId/grade', allowRoles('teacher', 'school_admin'), saveGrade);
 
 module.exports = router;

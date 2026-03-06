@@ -346,8 +346,94 @@ const updateExam = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+const getGradingSessions = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const examRes = await pool.query(`SELECT * FROM exams WHERE id = $1`, [id]);
+    if (examRes.rows.length === 0) return res.status(404).json({ message: 'Exam not found' });
+
+    const sessions = await pool.query(`
+      SELECT 
+        es.id AS session_id,
+        u.first_name || ' ' || u.last_name AS student_name,
+        es.score, es.submitted_at,
+        -- Check if all essay/short_answer questions are graded
+        NOT EXISTS (
+          SELECT 1 FROM exam_questions eq
+          JOIN questions q ON eq.question_id = q.id
+          LEFT JOIN responses r ON r.session_id = es.id AND r.question_id = q.id
+          WHERE eq.exam_id = $1
+          AND q.type IN ('essay', 'short_answer')
+          AND (r.marks_awarded IS NULL)
+        ) AS fully_graded
+      FROM exam_sessions es
+      JOIN users u ON es.student_id = u.id
+      WHERE es.exam_id = $1 AND es.status = 'submitted'
+      ORDER BY es.submitted_at DESC
+    `, [id]);
+
+    res.json({ exam: examRes.rows[0], sessions: sessions.rows });
+  } catch (err) {
+    console.error('getGradingSessions error:', err);
+    res.status(500).json({ message: 'Failed to load grading sessions' });
+  }
+};
+
+const getSessionAnswers = async (req, res) => {
+  try {
+    const { id, sessionId } = req.params;
+    const answers = await pool.query(`
+      SELECT
+        q.id AS question_id, q.body, q.type, q.marks,
+        r.text_answer AS student_answer,
+        r.marks_awarded, r.feedback,
+        (SELECT text FROM question_options WHERE question_id = q.id AND is_correct = true LIMIT 1) AS model_answer
+      FROM exam_questions eq
+      JOIN questions q ON eq.question_id = q.id
+      LEFT JOIN responses r ON r.session_id = $2 AND r.question_id = q.id
+      WHERE eq.exam_id = $1 AND q.type IN ('essay', 'short_answer')
+      ORDER BY eq.order_num ASC
+    `, [id, sessionId]);
+
+    res.json({ answers: answers.rows });
+  } catch (err) {
+    console.error('getSessionAnswers error:', err);
+    res.status(500).json({ message: 'Failed to load answers' });
+  }
+};
+
+const saveGrade = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { question_id, marks_awarded, feedback } = req.body;
+
+    // Update or insert response with grade
+    await pool.query(`
+      INSERT INTO responses (session_id, question_id, marks_awarded, feedback)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (session_id, question_id)
+      DO UPDATE SET marks_awarded = $3, feedback = $4
+    `, [sessionId, question_id, marks_awarded, feedback || null]);
+
+    // Recalculate total score for session
+    await pool.query(`
+      UPDATE exam_sessions
+      SET score = (
+        SELECT COALESCE(SUM(r.marks_awarded), 0)
+        FROM responses r WHERE r.session_id = $1
+      )
+      WHERE id = $1
+    `, [sessionId]);
+
+    res.json({ message: 'Grade saved successfully' });
+  } catch (err) {
+    console.error('saveGrade error:', err);
+    res.status(500).json({ message: 'Failed to save grade' });
+  }
+};
 
 module.exports = {
   createExam, getExams, getExam, updateExamStatus,
-  deleteExam, getExamResults, getMissingStudents, updateExam
+  deleteExam, getExamResults, getMissingStudents, updateExam,
+  getGradingSessions, getSessionAnswers, saveGrade
 };
