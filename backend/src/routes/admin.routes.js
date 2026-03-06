@@ -6,7 +6,7 @@ const {
   deleteUser, getExamResults, createUser,
   getPendingUsers, approveUser, bulkApproveUsers,
   getSchoolSettings, updateSchoolSettings, exportResults,
-  getExams, updateExamStatus, deleteExam
+  getExams, updateExamStatus, deleteExam, getReports
 } = require('../controllers/admin.controller');
 
 router.use(protect);
@@ -20,13 +20,13 @@ router.delete('/users/:id', deleteUser);
 router.get('/results', getExamResults);
 router.get('/pending', getPendingUsers);
 router.patch('/users/:id/approve', approveUser);
-router.get('/export', exportResults);
 router.post('/users/bulk-approve', bulkApproveUsers);
+router.get('/export', exportResults);
 router.get('/exams', getExams);
 router.patch('/exams/:id/status', updateExamStatus);
 router.delete('/exams/:id', deleteExam);
-router.get('/school-settings', allowRoles('school_admin', 'super_admin'), getSchoolSettings);
-router.put('/school-settings', allowRoles('school_admin', 'super_admin'), updateSchoolSettings);
+router.get('/reports', getReports);
+router.get('/school-settings', getSchoolSettings);
+router.put('/school-settings', updateSchoolSettings);
 
 module.exports = router;
- 
