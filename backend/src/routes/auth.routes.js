@@ -24,11 +24,11 @@ router.post('/setup-super-admin', async (req, res) => {
 
     const password_hash = await bcrypt.hash('Password123', 12);
     const result = await pool.query(`
-      INSERT INTO users (first_name, last_name, email, password_hash, role, school_id, approval_status, is_active)
+      INSERT INTO users (first_name, last_name, email, password, role, school_id, approval_status, is_active)
       VALUES ('Super', 'Admin', 'superadmin@dmaths.com', $1, 'super_admin', $2, 'approved', true)
       RETURNING id, email, role
     `, [password_hash, school.rows[0].id]);
-
+    
     res.json({ message: '✅ Super admin created!', user: result.rows[0] });
   } catch (err) {
     res.status(500).json({ message: err.message });
