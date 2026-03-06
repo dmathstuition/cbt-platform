@@ -78,28 +78,41 @@ const toggleUserStatus = async (req, res) => {
 
 // DELETE USER
 const deleteUser = async (req, res) => {
+  const { id } = req.params;
+  const { school_id } = req.user;
   try {
-    const { id } = req.params;
-    const userRes = await pool.query('SELECT first_name, last_name, role FROM users WHERE id=$1', [id]);
-    const deletedUser = userRes.rows[0];
-    await pool.query('DELETE FROM responses WHERE session_id IN (SELECT id FROM exam_sessions WHERE student_id=$1)', [id]);
-    await pool.query('DELETE FROM exam_sessions WHERE student_id=$1', [id]);
-    await pool.query('DELETE FROM parent_student WHERE student_id=$1 OR parent_id=$1', [id]);
-    await pool.query('DELETE FROM teacher_assignments WHERE teacher_id=$1', [id]);
-    await pool.query('DELETE FROM users WHERE id=$1 AND school_id=$2', [id, req.user.school_id]);
-    if (deletedUser) {
-      await logActivity({
-        user_id: req.user.id,
-        school_id: req.user.school_id,
-        action: 'user_deleted',
-        description: `Deleted user: ${deletedUser.first_name} ${deletedUser.last_name} (${deletedUser.role})`,
-        metadata: { deleted_user_id: id }
-      });
+    const userRes = await pool.query(
+      `SELECT first_name, last_name, role FROM users WHERE id = $1 AND school_id = $2`,
+      [id, school_id]
+    );
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
     }
+    const deletedUser = userRes.rows[0];
+
+    // Remove foreign key references before deleting user
+    await pool.query(`DELETE FROM responses WHERE session_id IN (SELECT id FROM exam_sessions WHERE student_id = $1)`, [id]);
+    await pool.query(`DELETE FROM exam_sessions WHERE student_id = $1`, [id]);
+    await pool.query(`DELETE FROM parent_student WHERE student_id = $1 OR parent_id = $1`, [id]);
+    await pool.query(`DELETE FROM notifications WHERE user_id = $1`, [id]);
+    await pool.query(`DELETE FROM activity_logs WHERE user_id = $1`, [id]);
+
+    // Nullify question creator references instead of deleting questions
+    await pool.query(`UPDATE questions SET created_by = NULL WHERE created_by = $1`, [id]);
+
+    // Nullify exam creator references
+    await pool.query(`UPDATE exams SET created_by = NULL WHERE created_by = $1`, [id]);
+
+    // Delete the user
+    await pool.query(`DELETE FROM users WHERE id = $1`, [id]);
+
+    await logActivity(req.user.id, school_id, 'user_deleted',
+      `Deleted user: ${deletedUser.first_name} ${deletedUser.last_name} (${deletedUser.role})`);
+
     res.json({ message: 'User deleted successfully' });
-  } catch (error) {
-    console.error('Delete user error:', error.message);
-    res.status(500).json({ message: 'Server error' });
+  } catch (err) {
+    console.error('Delete user error:', err);
+    res.status(500).json({ message: 'Failed to delete user: ' + err.message });
   }
 };
 
