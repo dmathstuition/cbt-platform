@@ -11,12 +11,10 @@ const roleNavItems = {
     { icon: '📊', label: 'Results', path: '/admin/results' },
     { icon: '⚙️', label: 'Settings', path: '/admin/school-settings' }
   ],
-  super_admin: [
-    { icon: '🏠', label: 'Dashboard', path: '/admin/dashboard' },
-    { icon: '👥', label: 'Users', path: '/admin/users' },
-    { icon: '📋', label: 'Exams', path: '/admin/exams' },
-    { icon: '📊', label: 'Results', path: '/admin/results' },
-    { icon: '⚙️', label: 'Settings', path: '/admin/school-settings' }
+ super_admin: [
+    { icon: '🌐', label: 'Dashboard', path: '/super-admin/dashboard' },
+    { icon: '🏫', label: 'Schools', path: '/super-admin/dashboard' },
+    { icon: '🔑', label: 'Password', path: '/change-password' },
   ],
   teacher: [
     { icon: '🏠', label: 'Dashboard', path: '/teacher/dashboard' },
