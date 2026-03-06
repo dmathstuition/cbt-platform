@@ -72,6 +72,7 @@ const routes = [
   ['/api/subjects', './routes/subject.routes'],
   ['/api/notifications', './routes/notification.routes'],
   ['/api/activity', './routes/activity.routes'],
+  ['/api/super-admin', './routes/superadmin.routes']
 ];
 
 routes.forEach(([path, route]) => {

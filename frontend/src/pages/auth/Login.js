@@ -18,7 +18,8 @@ function Login() {
     if (token && userData) {
       const u = JSON.parse(userData);
       if (u.role === 'student') navigate('/student/dashboard');
-      else if (u.role === 'school_admin' || u.role === 'super_admin') navigate('/admin/dashboard');
+      else if (u.role === 'super_admin') navigate('/super-admin/dashboard');
+      else if (u.role === 'school_admin') navigate('/admin/dashboard');
       else if (u.role === 'parent') navigate('/parent/dashboard');
       else navigate('/teacher/dashboard');
     }
@@ -35,7 +36,8 @@ function Login() {
       login(res.data.user, res.data.token, res.data.refreshToken);
       const role = res.data.user.role;
       if (role === 'student') navigate('/student/dashboard');
-      else if (role === 'school_admin' || role === 'super_admin') navigate('/admin/dashboard');
+     else if (role === 'super_admin') navigate('/super-admin/dashboard');
+      else if (role === 'school_admin') navigate('/admin/dashboard');
       else if (role === 'parent') navigate('/parent/dashboard');
       else navigate('/teacher/dashboard');
     } catch (err) {
