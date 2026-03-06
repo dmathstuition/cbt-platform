@@ -11,7 +11,7 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 
 // Lazy load everything else
-const StudentDashboard  = lazy(() => import('./pages/student/Dashboard'));
+ const StudentDashboard  = lazy(() => import('./pages/student/Dashboard'));
 const TakeExam          = lazy(() => import('./pages/student/TakeExam'));
 const Results           = lazy(() => import('./pages/student/Results'));
 const Leaderboard       = lazy(() => import('./pages/student/Leaderboard'));
@@ -40,6 +40,8 @@ const SchoolSettings    = lazy(() => import('./pages/admin/SchoolSettings'));
 const ParentDashboard   = lazy(() => import('./pages/parent/Dashboard'));
 const ChangePassword    = lazy(() => import('./pages/auth/ChangePassword'));
 const Reports           = lazy(() => import('./pages/admin/Reports'));
+
+
 
 function App() {
   return (
@@ -99,6 +101,7 @@ function App() {
             } />
 
             {/* Admin */}
+            
             <Route path="/admin/dashboard" element={
               <PrivateRoute allowedRoles={['school_admin','super_admin']}><AdminDashboard /></PrivateRoute>
             } />
