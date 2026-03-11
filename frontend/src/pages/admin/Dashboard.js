@@ -6,6 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
+import './Dashboard.css';
 
 function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -71,10 +72,31 @@ function AdminDashboard() {
     { name: 'Teachers', value: stats?.teachers || 0, color: '#3182CE' },
   ];
 
+  const topStudents = Object.values(results.reduce((acc, item) => {
+    const key = item.student_email || item.student_name;
+    const percent = item.total_marks > 0 ? (Number(item.score || 0) / Number(item.total_marks)) * 100 : 0;
+
+    if (!acc[key]) {
+      acc[key] = { name: item.student_name, attempts: 0, average: 0, passCount: 0 };
+    }
+
+    acc[key].attempts += 1;
+    acc[key].average += percent;
+    if (item.passed) acc[key].passCount += 1;
+    return acc;
+  }, {})).map(student => ({
+    ...student,
+    average: student.attempts ? (student.average / student.attempts) : 0
+  })).sort((a, b) => b.average - a.average).slice(0, 5);
+
+  const latestSubmissions = [...results].slice(0, 6);
+
   if (loading) return <div style={styles.center}><p>Loading dashboard...</p></div>;
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} className="admin-dashboard-shell">
+      <div className="admin-ambient admin-ambient-one" />
+      <div className="admin-ambient admin-ambient-two" />
 
       {/* Header */}
       <div style={styles.pageHeader}>
@@ -83,10 +105,10 @@ function AdminDashboard() {
           <p style={styles.subtitle}>School overview and management</p>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button style={styles.reportsBtn} onClick={() => navigate('/admin/reports')}>
+          <button style={styles.reportsBtn} className="admin-btn-glass" onClick={() => navigate('/admin/reports')}>
             📈 Reports
           </button>
-          <button style={styles.notifyBtn} onClick={() => navigate('/admin/notifications')}>
+          <button style={styles.notifyBtn} className="admin-btn-glass" onClick={() => navigate('/admin/notifications')}>
             📢 Notify
           </button>
         </div>
@@ -101,7 +123,7 @@ function AdminDashboard() {
           </div>
           <div style={styles.pendingList}>
             {pendingUsers.map(u => (
-              <div key={u.id} style={styles.pendingItem}>
+              <div key={u.id} style={styles.pendingItem} className="admin-glass-card admin-animate-rise">
                 <div style={styles.pendingAvatar}>{u.first_name[0]}{u.last_name[0]}</div>
                 <div style={styles.pendingInfo}>
                   <div style={styles.pendingName}>{u.first_name} {u.last_name}</div>
@@ -128,7 +150,7 @@ function AdminDashboard() {
           { icon: '✅', value: `${stats?.pass_rate || 0}%`, label: 'Pass Rate', color: '#805AD5' },
           { icon: '⏳', value: pendingUsers.length, label: 'Pending', color: '#E53E3E' }
         ].map((s, i) => (
-          <div key={i} style={{ ...styles.statCard, borderTop: `4px solid ${s.color}` }}>
+          <div key={i} style={{ ...styles.statCard, borderTop: `4px solid ${s.color}` }} className="admin-glass-card admin-animate-rise">
             <div style={styles.statIcon}>{s.icon}</div>
             <div style={styles.statValue}>{s.value}</div>
             <div style={styles.statLabel}>{s.label}</div>
@@ -141,7 +163,7 @@ function AdminDashboard() {
         <div style={styles.chartsRow}>
 
           {/* Bar Chart - Exam Performance */}
-          <div style={styles.chartCard}>
+          <div style={styles.chartCard} className="admin-glass-card admin-animate-rise">
             <h3 style={styles.chartTitle}>📊 Exam Performance</h3>
             <p style={styles.chartSubtitle}>Passed vs Failed per exam</p>
             <ResponsiveContainer width="100%" height={220}>
@@ -157,7 +179,7 @@ function AdminDashboard() {
           </div>
 
           {/* Pie Chart - Pass/Fail */}
-          <div style={styles.chartCard}>
+          <div style={styles.chartCard} className="admin-glass-card admin-animate-rise">
             <h3 style={styles.chartTitle}>🎯 Overall Pass Rate</h3>
             <p style={styles.chartSubtitle}>{results.length} total submissions</p>
             <ResponsiveContainer width="100%" height={220}>
@@ -180,7 +202,7 @@ function AdminDashboard() {
           </div>
 
           {/* Pie Chart - Users */}
-          <div style={styles.chartCard}>
+          <div style={styles.chartCard} className="admin-glass-card admin-animate-rise">
             <h3 style={styles.chartTitle}>👥 User Breakdown</h3>
             <p style={styles.chartSubtitle}>Students vs Teachers</p>
             <ResponsiveContainer width="100%" height={220}>
@@ -205,6 +227,47 @@ function AdminDashboard() {
         </div>
       )}
 
+      <div className="admin-insights-grid">
+        <div style={styles.chartCard} className="admin-glass-card admin-animate-rise">
+          <h3 style={styles.chartTitle}>🏅 Top Performing Students</h3>
+          <p style={styles.chartSubtitle}>Calculated from submitted exam records</p>
+          {topStudents.length === 0 ? (
+            <p style={styles.chartSubtitle}>No submitted results yet.</p>
+          ) : (
+            <div className="admin-top-list">
+              {topStudents.map((student, index) => (
+                <div key={`${student.name}-${index}`} className="admin-top-item">
+                  <span className="admin-rank">#{index + 1}</span>
+                  <div>
+                    <div className="admin-top-name">{student.name}</div>
+                    <div className="admin-top-meta">{student.passCount}/{student.attempts} passed</div>
+                  </div>
+                  <span className="admin-top-score">{student.average.toFixed(1)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={styles.chartCard} className="admin-glass-card admin-animate-rise">
+          <h3 style={styles.chartTitle}>🧾 Recent Submissions</h3>
+          <p style={styles.chartSubtitle}>Latest activity captured from exam sessions</p>
+          <div className="admin-submission-list">
+            {latestSubmissions.map((item) => (
+              <div key={item.id} className="admin-submission-item">
+                <div>
+                  <div className="admin-top-name">{item.student_name}</div>
+                  <div className="admin-top-meta">{item.exam_title}</div>
+                </div>
+                <span className={`badge ${item.passed ? 'badge-success' : 'badge-danger'}`}>
+                  {item.score}/{item.total_marks}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Two column layout */}
       <div style={styles.twoCol}>
         <div style={styles.actionsPanel}>
@@ -222,6 +285,7 @@ function AdminDashboard() {
             ].map((a, i) => (
               <button key={i}
                 style={{ ...styles.actionCard, borderLeft: `4px solid ${a.color}` }}
+                className="admin-glass-card admin-action-card"
                 onClick={() => navigate(a.path)}
               >
                 <span style={styles.actionIcon}>{a.icon}</span>

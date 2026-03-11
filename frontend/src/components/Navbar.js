@@ -13,7 +13,7 @@ const roleNavItems = {
   ],
  super_admin: [
     { icon: '🌐', label: 'Dashboard', path: '/super-admin/dashboard' },
-    { icon: '🏫', label: 'Schools', path: '/super-admin/dashboard' },
+    { icon: '🏫', label: 'Schools', path: '/admin/school-settings' },
     { icon: '🔑', label: 'Password', path: '/change-password' },
   ],
   teacher: [

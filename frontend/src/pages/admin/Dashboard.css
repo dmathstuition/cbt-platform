@@ -1,0 +1,121 @@
+.admin-dashboard-shell {
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-ambient {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  filter: blur(70px);
+  z-index: 0;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.admin-ambient-one {
+  top: -90px;
+  right: -80px;
+  background: linear-gradient(120deg, #3182ce, #805ad5);
+  animation: drift 12s ease-in-out infinite;
+}
+
+.admin-ambient-two {
+  bottom: 40px;
+  left: -100px;
+  background: linear-gradient(120deg, #38a169, #d69e2e);
+  animation: drift 15s ease-in-out infinite reverse;
+}
+
+.admin-dashboard-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.admin-glass-card {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme='dark'] .admin-glass-card {
+  background: rgba(26, 35, 51, 0.8) !important;
+  border-color: rgba(148, 163, 184, 0.25) !important;
+}
+
+.admin-animate-rise {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.admin-animate-rise:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+}
+
+.admin-btn-glass {
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2);
+}
+
+.admin-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-top-list,
+.admin-submission-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-top-item,
+.admin-submission-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+[data-theme='dark'] .admin-top-item,
+[data-theme='dark'] .admin-submission-item {
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.admin-rank {
+  font-weight: 700;
+  color: #805ad5;
+}
+
+.admin-top-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-top-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.admin-top-score {
+  font-weight: 700;
+  color: #2f855a;
+}
+
+.admin-action-card:hover {
+  transform: translateY(-3px) scale(1.01);
+}
+
+@keyframes drift {
+  0%,
+  100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(18px) translateX(-12px); }
+}

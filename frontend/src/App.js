@@ -38,6 +38,7 @@ const SendNotification  = lazy(() => import('./pages/admin/SendNotification'));
 const SchoolSettings    = lazy(() => import('./pages/admin/SchoolSettings'));
 
 const ParentDashboard   = lazy(() => import('./pages/parent/Dashboard'));
+const SuperAdminDashboard = lazy(() => import('./pages/superadmin/Dashboard'));
 const ChangePassword    = lazy(() => import('./pages/auth/ChangePassword'));
 const Reports           = lazy(() => import('./pages/admin/Reports'));
 
@@ -133,13 +134,17 @@ function App() {
               <PrivateRoute allowedRoles={['school_admin','super_admin']}><Reports /></PrivateRoute>
             } />
 
+            <Route path="/super-admin/dashboard" element={
+              <PrivateRoute allowedRoles={['super_admin']}><SuperAdminDashboard /></PrivateRoute>
+            } />
+
             {/* Parent */}
             <Route path="/parent/dashboard" element={
               <PrivateRoute allowedRoles={['parent']}><ParentDashboard /></PrivateRoute>
             } />
 
             <Route path="/change-password" element={
-              <PrivateRoute allowedRoles={['student','teacher','school_admin','parent']}>
+              <PrivateRoute allowedRoles={['student','teacher','school_admin','super_admin','parent']}>
                 <ChangePassword />
               </PrivateRoute>
             } />
